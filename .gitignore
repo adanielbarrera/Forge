@@ -1,0 +1,23 @@
+# Variables de entorno - NUNCA subir al repo
+.env
+.env.local
+.env.production
+
+# Dependencias
+node_modules/
+
+# Build de React
+frontend/dist/
+frontend/build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
