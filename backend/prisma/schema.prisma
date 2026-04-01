@@ -7,11 +7,56 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  role      Role     @default(MEMBER)
-  createdAt DateTime @default(now())
+  id         Int         @id @default(autoincrement())
+  email      String      @unique
+  password   String
+  role       Role        @default(MEMBER)
+  createdAt  DateTime    @default(now())
+  workouts   Workout[]
+  membership Membership?
+}
+
+model Workout {
+  id        Int          @id @default(autoincrement())
+  userId    Int
+  fecha     DateTime     @default(now())
+  notas     String?
+  user      User         @relation(fields: [userId], references: [id])
+  exercises WorkoutSet[]
+}
+
+model Exercise {
+  id        Int          @id @default(autoincrement())
+  nombre    String
+  categoria String?
+  sets      WorkoutSet[]
+}
+
+model WorkoutSet {
+  id         Int      @id @default(autoincrement())
+  workoutId  Int
+  exerciseId Int
+  series     Int
+  reps       Int
+  peso       Float
+  workout    Workout  @relation(fields: [workoutId], references: [id])
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+}
+
+model Membership {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique
+  estado      Estado   @default(ACTIVO)
+  fechaInicio DateTime @default(now())
+  fechaFin    DateTime
+  metodoPago  String?
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+enum Estado {
+  ACTIVO
+  VENCIDO
+  PENDIENTE
 }
 
 enum Role {
