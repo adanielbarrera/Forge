@@ -57,4 +57,55 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+const getProfile = async (req, res) => {
+    const userId = req.user.userId;
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                role: true,
+                nombre: true,
+                peso: true,
+                altura: true,
+                createdAt: true
+            }
+        });
+
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al obtener el perfil' });
+    }
+};
+
+const updateProfile = async (req, res) => {
+    const userId = req.user.userId;
+    const { nombre, peso, altura } = req.body;
+
+    try {
+        const updated = await prisma.user.update({
+            where: { id: userId },
+            data: { 
+                nombre, 
+                peso: peso ? parseFloat(peso) : undefined, 
+                altura: altura ? parseFloat(altura) : undefined 
+            },
+            select: {
+                id: true,
+                email: true,
+                nombre: true,
+                peso: true,
+                altura: true
+            }
+        });
+
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al actualizar el perfil' });
+    }
+};
+
+module.exports = { register, login, getProfile, updateProfile };

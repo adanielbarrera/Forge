@@ -11,6 +11,9 @@ model User {
   email      String      @unique
   password   String
   role       Role        @default(MEMBER)
+  nombre     String?
+  peso       Float?
+  altura     Float?
   createdAt  DateTime    @default(now())
   workouts   Workout[]
   membership Membership?
