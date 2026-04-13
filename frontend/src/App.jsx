@@ -3,6 +3,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import TrainerDashboard from './pages/TrainerDashboard';
 import Profile from './pages/Profile';
+import History from './pages/History';
 import WorkoutForm from './components/WorkoutForm';
 
 // Componente para proteger las rutas privadas
@@ -67,6 +68,14 @@ function App() {
                     element={
                         <ProtectedRoute allowedRole="MEMBER">
                             <WorkoutForm />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/history"
+                    element={
+                        <ProtectedRoute allowedRole="MEMBER">
+                            <History />
                         </ProtectedRoute>
                     }
                 />
