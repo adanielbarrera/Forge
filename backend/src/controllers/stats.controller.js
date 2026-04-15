@@ -72,7 +72,45 @@ const getExerciseProgress = async (req, res) => {
     }
 };
 
+const getPersonalRecords = async (req, res) => {
+    const userId = req.user.userId;
+
+    try {
+        // Obtenemos todos los sets del usuario, incluyendo el nombre del ejercicio
+        const sets = await prisma.workoutSet.findMany({
+            where: {
+                workout: { userId }
+            },
+            include: {
+                exercise: true,
+                workout: { select: { fecha: true } }
+            }
+        });
+
+        // Agrupamos por ejercicio y encontramos el peso máximo
+        const prsMap = sets.reduce((acc, set) => {
+            const exId = set.exerciseId;
+            if (!acc[exId] || set.peso > acc[exId].peso) {
+                acc[exId] = {
+                    id: exId,
+                    nombre: set.exercise.nombre,
+                    peso: set.peso,
+                    fecha: set.workout.fecha
+                };
+            }
+            return acc;
+        }, {});
+
+        const prs = Object.values(prsMap);
+        res.json(prs);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error al obtener los PRs" });
+    }
+};
+
 module.exports = {
     getWeeklyVolume,
-    getExerciseProgress
+    getExerciseProgress,
+    getPersonalRecords
 };

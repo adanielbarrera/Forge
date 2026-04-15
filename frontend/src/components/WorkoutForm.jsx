@@ -13,15 +13,34 @@ export default function WorkoutForm() {
     const [selectedExerciseId, setSelectedExerciseId] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [timer, setTimer] = useState(0); // Timer in seconds
+    const [showSummary, setShowSummary] = useState(false);
 
     const token = localStorage.getItem('token');
     const API_BASE = 'http://localhost:3000/api';
+
+    // Timer logic
+    useEffect(() => {
+        let interval = null;
+        if (!showSummary) {
+            interval = setInterval(() => {
+                setTimer(prev => prev + 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [showSummary]);
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
 
     // Fetch exercises on mount
     useEffect(() => {
         const fetchExercisesList = async () => {
             try {
-                const response = await fetch(`${API_BASE}/exercises`, {
+                const response = await fetch(`${API_BASE}/workouts/exercises`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Accept': 'application/json'
@@ -49,7 +68,7 @@ export default function WorkoutForm() {
         }
     }, [token]);
 
-    const handleAddExercise = () => {
+    const handleAddExercise = async () => {
         if (!selectedExerciseId) return;
         
         const exercise = exercises.find(ex => 
@@ -59,23 +78,38 @@ export default function WorkoutForm() {
         
         if (!exercise) return;
 
+        let lastReps = 15;
+        let lastWeight = 50;
+
+        try {
+            const res = await axios.get(`${API_BASE}/workouts/exercises/last-values/${exercise.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            lastReps = res.data.reps;
+            lastWeight = res.data.peso;
+        } catch (err) {
+            console.error("No se pudieron obtener los últimos valores:", err);
+        }
+
         const newWorkoutExercise = {
             ...exercise,
             id: exercise.id || exercise._id,
             nombre: exercise.nombre,
-            sets: [{ id: Date.now(), reps: 15, weight: 50, completed: false }]
+            sets: [{ id: Date.now(), reps: lastReps, weight: lastWeight, completed: false }]
         };
 
         setWorkoutExercises(prev => [...prev, newWorkoutExercise]);
         setSelectedExerciseId('');
     };
 
-    const addSet = (exerciseIndex) => {
+    const addSet = async (exerciseIndex) => {
         const updated = [...workoutExercises];
+        const lastSet = updated[exerciseIndex].sets[updated[exerciseIndex].sets.length - 1];
+        
         updated[exerciseIndex].sets.push({
             id: Date.now(),
-            reps: '',
-            weight: '',
+            reps: lastSet ? lastSet.reps : 10,
+            weight: lastSet ? lastSet.weight : 20,
             completed: false
         });
         setWorkoutExercises(updated);
@@ -83,36 +117,60 @@ export default function WorkoutForm() {
 
     const toggleSet = (exerciseIndex, setIndex) => {
         const updated = [...workoutExercises];
+        const s = updated[exerciseIndex].sets[setIndex];
+        
+        // Validación antes de marcar como completado
+        if (!s.reps || s.reps <= 0 || !s.weight || s.weight < 0) {
+            setError('Por favor ingresa valores válidos (mayores a 0) antes de marcar como completado.');
+            return;
+        }
+
         updated[exerciseIndex].sets[setIndex].completed = !updated[exerciseIndex].sets[setIndex].completed;
         setWorkoutExercises(updated);
+        setError('');
     };
 
     const updateSet = (exerciseIndex, setIndex, field, value) => {
         const updated = [...workoutExercises];
+        // Solo permitir números positivos o vacío para borrar
+        if (value !== '' && Number(value) < 0) return;
+        
         updated[exerciseIndex].sets[setIndex][field] = value;
         setWorkoutExercises(updated);
     };
 
-    const handleFinishWorkout = async () => {
+    const handleFinishWorkout = () => {
         if (workoutExercises.length === 0) {
             setError('Agrega al menos un ejercicio.');
             return;
         }
 
+        // Validar que todos los sets tengan valores válidos
+        const allValid = workoutExercises.every(ex => 
+            ex.sets.every(s => s.reps > 0 && s.weight >= 0 && s.reps !== '' && s.weight !== '')
+        );
+
+        if (!allValid) {
+            setError('Todos los sets deben tener repeticiones y peso válidos.');
+            return;
+        }
+
+        setShowSummary(true);
+    };
+
+    const submitWorkout = async () => {
         setIsLoading(true);
         setError('');
 
         try {
-            // Mapeamos los ejercicios y sus series al formato que espera el backend/Prisma
             const exercisesData = [];
-            
             workoutExercises.forEach(ex => {
                 ex.sets.forEach((s, index) => {
                     exercisesData.push({
                         exerciseId: Number(ex.id),
-                        series: index + 1, // Campo obligatorio según el error de Prisma
+                        series: index + 1,
                         reps: Number(s.reps),
-                        peso: Number(s.weight) // Traducido a 'peso' como pide el backend
+                        peso: Number(s.weight)
                     });
                 });
             });
@@ -133,16 +191,94 @@ export default function WorkoutForm() {
                 throw new Error(errorData.message || 'Error al guardar el entrenamiento');
             }
 
-            alert('¡Entrenamiento finalizado con éxito!');
             setWorkoutExercises([]);
             navigate('/dashboard');
         } catch (err) {
             console.error('Submit error:', err);
             setError(err.message);
+            setShowSummary(false); // Go back to fix error if it fails
         } finally {
             setIsLoading(false);
         }
     };
+
+    const calculateVolume = () => {
+        return workoutExercises.reduce((acc, ex) => 
+            acc + ex.sets.reduce((sum, s) => sum + (Number(s.reps) * Number(s.weight)), 0), 0
+        );
+    };
+
+    const calculateTotalSets = () => {
+        return workoutExercises.reduce((acc, ex) => acc + ex.sets.length, 0);
+    };
+
+    if (showSummary) {
+        return (
+            <div className="min-h-screen bg-[#0a0a0e] text-white p-6 font-['Figtree'] selection:bg-[#e05c2a] flex flex-col items-center">
+                <div className="w-full max-w-md animate-[fadeIn_0.5s_ease-out]">
+                    <h1 className="font-['Syne'] font-extrabold text-[36px] text-white mt-10 mb-2 animate-[slideUp_0.5s_ease-out_forwards]">
+                        Felicidades
+                    </h1>
+                    <p className="text-[16px] text-white/60 mb-10 animate-[slideUp_0.5s_ease-out_forwards] delay-75">
+                        Entrenamiento finalizado
+                    </p>
+
+                    {/* Resumen Card */}
+                    <div className="bg-[#14141e] rounded-[16px] p-6 mb-6 border border-white/5 shadow-xl animate-[slideUp_0.5s_ease-out_forwards] delay-100">
+                        <h2 className="font-semibold text-[24px] mb-8">Resumen</h2>
+                        
+                        <div className="grid grid-cols-2 gap-y-10">
+                            <div className="flex flex-col">
+                                <p className="font-['DM_Mono'] text-[28px] leading-none mb-1">
+                                    {calculateVolume().toLocaleString()}Kg
+                                </p>
+                                <div className="text-[14px] opacity-60">
+                                    <p>Volumen</p>
+                                    <p>Total</p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col pl-6 border-l border-white/10">
+                                <div className="mb-6">
+                                    <p className="font-['DM_Mono'] text-[28px] leading-none mb-1">
+                                        {formatTime(timer)}
+                                    </p>
+                                    <p className="text-[14px] opacity-60">Tiempo</p>
+                                </div>
+                                <div>
+                                    <p className="font-['DM_Mono'] text-[28px] leading-none mb-1">
+                                        {calculateTotalSets()}
+                                    </p>
+                                    <p className="text-[14px] opacity-60">Series</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* IA Analysis Card */}
+                    <div className="bg-[#14141e] border-r border-[#6b7aff] rounded-[16px] p-6 mb-12 animate-[slideUp_0.5s_ease-out_forwards] delay-200">
+                        <p className="font-['DM_Mono'] text-[13px] text-[#6b7aff] mb-4 uppercase tracking-wider">
+                            Análisis de IA
+                        </p>
+                        <div className="font-['DM_Mono'] text-[12px] leading-relaxed space-y-2 opacity-80">
+                            <p>Es una rutina sólida y equilibrada.</p>
+                            <p>Has completado {workoutExercises.length} ejercicios diferentes hoy.</p>
+                            <p className="mt-4 text-[#6b7aff] font-bold">Sugerencia:</p>
+                            <p>Asegúrate de progresar en cargas cada semana y priorizar la técnica sobre el peso para evitar lesiones.</p>
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={submitWorkout}
+                        disabled={isLoading}
+                        className="w-full bg-[#e05c2a] hover:bg-[#c84d20] text-[#f5f0e8] font-semibold text-[24px] py-4 rounded-[10px] transition-all active:scale-95 disabled:opacity-50 animate-[slideUp_0.5s_ease-out_forwards] delay-300"
+                    >
+                        {isLoading ? 'Guardando...' : 'Guardar entrenamiento'}
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#0a0a0e] text-white p-4 font-['Figtree'] selection:bg-[#e05c2a]">
@@ -156,7 +292,7 @@ export default function WorkoutForm() {
                         </h1>
                         <div className="mt-2 text-[#f5f0e8] opacity-80">
                             <span className="font-semibold text-sm uppercase tracking-wider">Tiempo</span>
-                            <p className="text-2xl font-bold font-mono">00:00</p>
+                            <p className="text-2xl font-bold font-mono">{formatTime(timer)}</p>
                         </div>
                     </div>
                     

@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../prisma');
 
 const register = async (req, res) => {
-    const { email, password, role } = req.body;
+    const { email, password, role, nombre } = req.body;
 
     if (!email || !password) {
         return res.status(400).json({ error: 'Email y contraseña requeridos' });
@@ -18,11 +18,17 @@ const register = async (req, res) => {
 
         const hashed = await bcrypt.hash(password, 10);
         const user = await prisma.user.create({
-            data: { email, password: hashed, role: role ?? 'MEMBER' },
+            data: { 
+                email, 
+                password: hashed, 
+                role: role ?? 'MEMBER',
+                nombre: nombre || null
+            },
         });
 
-        res.status(201).json({ id: user.id, email: user.email, role: user.role });
+        res.status(201).json({ id: user.id, email: user.email, role: user.role, nombre: user.nombre });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 };

@@ -76,7 +76,7 @@ export default function Dashboard() {
         <div className="min-h-screen bg-[#0a0a0e] text-white font-['Figtree'] pb-24 relative selection:bg-[#e05c2a]">
             
             {/* Header */}
-            <div className="flex justify-end p-6">
+            <div className="flex justify-end p-6 animate-[fadeIn_0.5s_ease-out]">
                 <button 
                     onClick={handleLogout}
                     className="w-10 h-10 rounded-full bg-[#14141e] flex items-center justify-center text-[#f5f0e8] hover:bg-red-500/20 hover:text-red-500 transition-colors"
@@ -87,7 +87,7 @@ export default function Dashboard() {
                 </button>
             </div>
 
-            <div className="max-w-md mx-auto px-4">
+            <div className="max-w-md mx-auto px-4 animate-[slideUp_0.5s_ease-out_forwards] opacity-0" style={{ animationDelay: '0.1s' }}>
                 <h1 className="font-['Syne'] font-extrabold text-[32px] sm:text-[36px] text-white mb-8 truncate">
                     Hola {userName}
                 </h1>

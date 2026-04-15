@@ -4,26 +4,64 @@ const getAllMemberships = async (req, res) => {
     const { role } = req.user;
 
     if (role !== 'TRAINER') {
-        return res.status(403).json({ error: "No tienes permiso para ver las membresías" });
+        return res.status(403).json({ error: "No tienes permiso para ver los alumnos" });
     }
 
     try {
-        const memberships = await prisma.membership.findMany({
+        // Buscamos todos los usuarios que sean alumnos
+        const students = await prisma.user.findMany({
+            where: {
+                role: 'MEMBER'
+            },
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        email: true,
-                        role: true,
-                        createdAt: true
-                    }
-                }
+                membership: true
+            },
+            orderBy: {
+                createdAt: 'desc'
             }
         });
 
-        res.json(memberships);
+        // Formateamos la respuesta para que el frontend siga funcionando igual
+        // pero incluimos a los que no tienen membresía aún
+        const formattedData = students.map(student => ({
+            id: student.membership?.id || `temp-${student.id}`,
+            estado: student.membership?.estado || 'SIN MEMBRESÍA',
+            fechaFin: student.membership?.fechaFin || null,
+            user: {
+                id: student.id,
+                email: student.email,
+                nombre: student.nombre,
+                role: student.role
+            }
+        }));
+
+        res.json(formattedData);
     } catch (err) {
-        res.status(500).json({ error: "Error al obtener las membresías" });
+        console.error(err);
+        res.status(500).json({ error: "Error al obtener la lista de alumnos" });
+    }
+};
+
+const createMembership = async (req, res) => {
+    const { role } = req.user;
+    const { userId, fechaFin, estado } = req.body;
+
+    if (role !== 'TRAINER') {
+        return res.status(403).json({ error: "No tienes permiso para crear membresías" });
+    }
+
+    try {
+        const newMembership = await prisma.membership.create({
+            data: {
+                userId,
+                fechaFin: new Date(fechaFin),
+                estado: estado || 'ACTIVO'
+            }
+        });
+        res.status(201).json(newMembership);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error al crear la membresía" });
     }
 };
 
@@ -58,5 +96,6 @@ const updateMembershipStatus = async (req, res) => {
 
 module.exports = {
     getAllMemberships,
+    createMembership,
     updateMembershipStatus
 };
