@@ -99,10 +99,92 @@ const getWorkoutById = async (req, res) => {
 
 const getExercises = async (req, res) => {
     try {
-        const exercises = await prisma.exercise.findMany();
+        const exercises = await prisma.exercise.findMany({
+            orderBy: { nombre: 'asc' }
+        });
         res.json(exercises);
     } catch (err) {
         res.status(500).json({ error: "Error al obtener los ejercicios" });
+    }
+};
+
+const getTemplates = async (req, res) => {
+    const userId = req.user.userId;
+
+    try {
+        const templates = await prisma.template.findMany({
+            where: {
+                OR: [
+                    { creadorId: userId },
+                    { publico: true }
+                ]
+            },
+            include: {
+                creador: {
+                    select: { nombre: true, role: true }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        res.json(templates);
+    } catch (err) {
+        res.status(500).json({ error: "Error al obtener las plantillas" });
+    }
+};
+
+const createTemplate = async (req, res) => {
+    const { nombre, descripcion, rutina, publico } = req.body;
+    const userId = req.user.userId;
+
+    if (!nombre || !rutina) {
+        return res.status(400).json({ error: "Nombre y rutina son obligatorios" });
+    }
+
+    try {
+        const template = await prisma.template.create({
+            data: {
+                nombre,
+                descripcion,
+                rutina, // JSON
+                publico: publico || false,
+                creadorId: userId
+            }
+        });
+
+        res.status(201).json(template);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error al crear la plantilla" });
+    }
+};
+
+const getTemplateById = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    try {
+        const template = await prisma.template.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                creador: {
+                    select: { nombre: true, role: true }
+                }
+            }
+        });
+
+        if (!template) {
+            return res.status(404).json({ error: "Plantilla no encontrada" });
+        }
+
+        // Si no es pública y no es el creador, no puede verla
+        if (!template.publico && template.creadorId !== userId) {
+            return res.status(403).json({ error: "No tienes permiso para ver esta plantilla" });
+        }
+
+        res.json(template);
+    } catch (err) {
+        res.status(500).json({ error: "Error al obtener la plantilla" });
     }
 };
 
@@ -140,5 +222,8 @@ module.exports = {
     getWorkouts,
     getWorkoutById,
     getExercises,
-    getLastValues
+    getLastValues,
+    getTemplates,
+    createTemplate,
+    getTemplateById
 };

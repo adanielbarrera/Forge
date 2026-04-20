@@ -115,6 +115,15 @@ export default function TrainerDashboard() {
                         Nuevo Alumno
                     </button>
                     <button 
+                        onClick={() => navigate('/templates')}
+                        className="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                        </svg>
+                        Plantillas
+                    </button>
+                    <button 
                         onClick={handleLogout}
                         className="w-10 h-10 rounded-full bg-[#14141e] flex items-center justify-center text-[#f5f0e8] hover:bg-red-500/20 hover:text-red-500 transition-colors"
                     >
@@ -222,8 +231,8 @@ export default function TrainerDashboard() {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <button 
-                                                    className="text-[#e05c2a] opacity- group-hover:opacity-100 transition-opacity hover:underline text-sm font-semibold"
-                                                    onClick={() => alert('Próximamente: Gestionar rutinas')}
+                                                    className="text-[#e05c2a] opacity-0 group-hover:opacity-100 transition-opacity hover:underline text-sm font-semibold"
+                                                    onClick={() => navigate(`/member/${m.userId}`)}
                                                 >
                                                     Gestionar
                                                 </button>
@@ -247,7 +256,10 @@ export default function TrainerDashboard() {
                     </svg>
                     <span className="text-[10px] mt-1 font-medium text-[#e05c2a]">Alumnos</span>
                 </button>
-                <button className="flex flex-col items-center justify-center w-12 h-12 text-[#f5f0e8] opacity-40 hover:opacity-100 transition-opacity">
+                <button 
+                    onClick={() => navigate('/templates')}
+                    className="flex flex-col items-center justify-center w-12 h-12 text-[#f5f0e8] opacity-40 hover:opacity-100 transition-opacity"
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>

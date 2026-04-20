@@ -17,15 +17,15 @@ app.use(helmet());
 // 2. CORS Restringido (Solo permitimos nuestro frontend en desarrollo)
 app.use(cors({
     origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // 3. Rate Limiting (Protección contra fuerza bruta y DoS)
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // límite de 100 peticiones por IP en la ventana
-    message: { error: 'Demasiadas peticiones desde esta IP, por favor intenta después de 15 minutos.' }
+    windowMs: 5 * 60 * 1000, // 5 minutos
+    max: 500, // Aumentado a 500 para permitir el desarrollo fluido
+    message: { error: 'Demasiadas peticiones desde esta IP, por favor intenta después de 5 minutos.' }
 });
 app.use('/api/', limiter);
 

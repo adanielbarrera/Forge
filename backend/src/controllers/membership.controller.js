@@ -1,5 +1,61 @@
 const prisma = require('../prisma');
 
+// Inicializamos Stripe de forma segura (no arroja error si la clave es nula aquí, 
+// pero fallará al intentar usar los métodos si no se provee una válida)
+const stripe = process.env.STRIPE_SECRET_KEY 
+    ? require('stripe')(process.env.STRIPE_SECRET_KEY)
+    : null;
+
+const createCheckoutSession = async (req, res) => {
+    if (!stripe) {
+        return res.status(500).json({ 
+            error: "La pasarela de pagos no está configurada (Falta STRIPE_SECRET_KEY en .env)" 
+        });
+    }
+
+    const userId = req.user.userId;
+    const { planId } = req.body; // 'standard' o 'premium'
+
+    // Definición de planes (hardcoded por ahora, idealmente en DB o Stripe Dashboard)
+    const plans = {
+        'standard': { name: 'Forge Standard', price: 49900, currency: 'mxn' }, // $499.00
+        'premium': { name: 'Forge Premium', price: 89900, currency: 'mxn' }    // $899.00
+    };
+
+    const selectedPlan = plans[planId];
+    if (!selectedPlan) {
+        return res.status(400).json({ error: "Plan inválido" });
+    }
+
+    try {
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [{
+                price_data: {
+                    currency: selectedPlan.currency,
+                    product_data: {
+                        name: selectedPlan.name,
+                    },
+                    unit_amount: selectedPlan.price,
+                },
+                quantity: 1,
+            }],
+            mode: 'payment',
+            success_url: `${process.env.FRONTEND_URL}/profile?payment=success`,
+            cancel_url: `${process.env.FRONTEND_URL}/profile?payment=cancel`,
+            metadata: {
+                userId: userId.toString(),
+                planId: planId
+            }
+        });
+
+        res.json({ id: session.id, url: session.url });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error al crear la sesión de pago" });
+    }
+};
+
 const getAllMemberships = async (req, res) => {
     const { role } = req.user;
 
@@ -95,6 +151,7 @@ const updateMembershipStatus = async (req, res) => {
 };
 
 module.exports = {
+    createCheckoutSession,
     getAllMemberships,
     createMembership,
     updateMembershipStatus

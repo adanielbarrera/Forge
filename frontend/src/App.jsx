@@ -5,9 +5,12 @@ import TrainerDashboard from './pages/TrainerDashboard';
 import Profile from './pages/Profile';
 import History from './pages/History';
 import WorkoutForm from './components/WorkoutForm';
+import TemplateForm from './pages/TemplateForm';
+import Templates from './pages/Templates';
+import MemberDetail from './pages/MemberDetail';
 
 // Componente para proteger las rutas privadas
-const ProtectedRoute = ({ children, allowedRole }) => {
+const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
     const token = localStorage.getItem('token');
     const userString = localStorage.getItem('user');
     const user = userString ? JSON.parse(userString) : null;
@@ -16,7 +19,11 @@ const ProtectedRoute = ({ children, allowedRole }) => {
         return <Navigate to="/login" replace />;
     }
 
-    if (allowedRole && user?.role !== allowedRole) {
+    if (allowedRoles) {
+        if (!allowedRoles.includes(user?.role)) {
+            return <Navigate to={user?.role === 'TRAINER' ? "/trainer-dashboard" : "/dashboard"} replace />;
+        }
+    } else if (allowedRole && user?.role !== allowedRole) {
         return <Navigate to={user?.role === 'TRAINER' ? "/trainer-dashboard" : "/dashboard"} replace />;
     }
 
@@ -84,6 +91,30 @@ function App() {
                     element={
                         <ProtectedRoute allowedRole="MEMBER">
                             <Profile />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/template/new"
+                    element={
+                        <ProtectedRoute allowedRoles={['MEMBER', 'TRAINER']}>
+                            <TemplateForm />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/templates"
+                    element={
+                        <ProtectedRoute allowedRoles={['MEMBER', 'TRAINER']}>
+                            <Templates />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/member/:id"
+                    element={
+                        <ProtectedRoute allowedRole="TRAINER">
+                            <MemberDetail />
                         </ProtectedRoute>
                     }
                 />

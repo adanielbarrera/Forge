@@ -6,11 +6,20 @@ const {
     getWorkouts,
     getWorkoutById,
     getExercises,
-    getLastValues
+    getLastValues,
+    getTemplates,
+    createTemplate,
+    getTemplateById
 } = require('../controllers/workout.controller');
 
 router.use(authenticate);
 
+// Rutas de Plantillas
+router.get('/templates', getTemplates);
+router.post('/templates', createTemplate);
+router.get('/templates/:id', getTemplateById);
+
+// Rutas de Entrenamientos
 router.post('/', createWorkout);
 router.get('/', getWorkouts);
 router.get('/exercises', getExercises);

@@ -1,20 +1,22 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
+import ExerciseSelector from './ExerciseSelector';
+import { getExercises } from '../utils/exerciseCache';
 
-/**
- * WorkoutForm Component
- * Senior Frontend Task - Sprint 2 GymFit Pro
- * Implements Exercise selection, Sets management, and API submission.
- */
 export default function WorkoutForm() {
     const navigate = useNavigate();
-    const [exercises, setExercises] = useState([]); // All exercises from API
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const templateId = queryParams.get('templateId');
+
+    const [exercises, setExercises] = useState([]); // All exercises from API/Cache
     const [workoutExercises, setWorkoutExercises] = useState([]); // Selected exercises for this workout
-    const [selectedExerciseId, setSelectedExerciseId] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [timer, setTimer] = useState(0); // Timer in seconds
     const [showSummary, setShowSummary] = useState(false);
+    const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
     const token = localStorage.getItem('token');
     const API_BASE = 'http://localhost:3000/api';
@@ -36,50 +38,50 @@ export default function WorkoutForm() {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Fetch exercises on mount
+    // Fetch exercises and template if needed
     useEffect(() => {
-        const fetchExercisesList = async () => {
+        const fetchData = async () => {
             try {
-                const response = await fetch(`${API_BASE}/workouts/exercises`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.message || `Error ${response.status}: No se pudieron cargar los ejercicios`);
-                }
-
-                const data = await response.json();
-                const exercisesList = Array.isArray(data) ? data : (data.exercises || []);
+                // 1. Fetch Exercises (Using Cache)
+                const exercisesList = await getExercises(token);
                 setExercises(exercisesList);
+
+                // 2. Fetch Template if provided
+                if (templateId) {
+                    const tempResponse = await axios.get(`${API_BASE}/workouts/templates/${templateId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    const templateData = tempResponse.data;
+                    // rutina is JSON: Array of { exerciseId, nombre, sets: [{ reps, weight }] }
+                    const initialWorkoutExercises = templateData.rutina.map(item => ({
+                        id: item.exerciseId,
+                        nombre: item.nombre,
+                        sets: item.sets.map((s, idx) => ({
+                            id: Date.now() + idx + Math.random(),
+                            reps: s.reps,
+                            weight: s.weight,
+                            completed: false
+                        }))
+                    }));
+                    setWorkoutExercises(initialWorkoutExercises);
+                }
             } catch (err) {
                 console.error('Fetch error:', err);
-                setError(err.message || 'Error de conexión con el servidor.');
+                setError('No se pudieron cargar los datos.');
             }
         };
 
         if (token) {
-            fetchExercisesList();
+            fetchData();
         } else {
-            setError('Sesión no válida. Por favor, inicia sesión de nuevo.');
+            setError('Sesión no válida.');
         }
-    }, [token]);
+    }, [token, templateId]);
 
-    const handleAddExercise = async () => {
-        if (!selectedExerciseId) return;
-        
-        const exercise = exercises.find(ex => 
-            String(ex.id) === String(selectedExerciseId) || 
-            String(ex._id) === String(selectedExerciseId)
-        );
-        
-        if (!exercise) return;
-
-        let lastReps = 15;
-        let lastWeight = 50;
+    const handleAddExercise = async (exercise) => {
+        let lastReps = 10;
+        let lastWeight = 20;
 
         try {
             const res = await axios.get(`${API_BASE}/workouts/exercises/last-values/${exercise.id}`, {
@@ -93,13 +95,12 @@ export default function WorkoutForm() {
 
         const newWorkoutExercise = {
             ...exercise,
-            id: exercise.id || exercise._id,
+            id: exercise.id,
             nombre: exercise.nombre,
             sets: [{ id: Date.now(), reps: lastReps, weight: lastWeight, completed: false }]
         };
 
         setWorkoutExercises(prev => [...prev, newWorkoutExercise]);
-        setSelectedExerciseId('');
     };
 
     const addSet = async (exerciseIndex) => {
@@ -319,25 +320,35 @@ export default function WorkoutForm() {
                     </div>
                 )}
 
-                {/* Exercise Selector */}
-                <div className="bg-[#14141e] border border-white/5 p-6 rounded-[16px] mb-8 flex flex-col sm:flex-row gap-4">
-                    <select 
-                        value={selectedExerciseId}
-                        onChange={(e) => setSelectedExerciseId(e.target.value)}
-                        className="flex-1 bg-black/40 border border-[#f5f0e8]/20 rounded-[10px] px-4 py-3 focus:outline-none focus:border-[#e05c2a]"
-                    >
-                        <option value="">Selecciona un ejercicio...</option>
-                        {exercises.map(ex => (
-                            <option key={ex.id || ex._id} value={ex.id || ex._id}>{ex.nombre}</option>
-                        ))}
-                    </select>
+                {/* Exercise Selector Trigger */}
+                <div className="mb-8">
                     <button 
-                        onClick={handleAddExercise}
-                        className="bg-transparent border border-[#e05c2a] text-[#e05c2a] font-semibold px-6 py-3 rounded-[10px] hover:bg-[#e05c2a] hover:text-white transition-all"
+                        onClick={() => setIsSelectorOpen(true)}
+                        className="w-full bg-[#14141e] border border-white/10 rounded-[16px] p-6 flex items-center justify-between group hover:border-[#e05c2a]/40 transition-all"
                     >
-                        Añadir Ejercicio
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-[#e05c2a]/10 flex items-center justify-center text-[#e05c2a] group-hover:scale-110 transition-transform">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                            </div>
+                            <div className="text-left">
+                                <p className="font-bold text-lg text-[#f5f0e8]">Añadir ejercicio</p>
+                                <p className="text-white/40 text-sm">Busca por grupo muscular</p>
+                            </div>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-white/20 group-hover:text-white transition-colors">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                        </svg>
                     </button>
                 </div>
+
+                <ExerciseSelector 
+                    isOpen={isSelectorOpen}
+                    onClose={() => setIsSelectorOpen(false)}
+                    onSelect={handleAddExercise}
+                    exercises={exercises}
+                />
 
                 {/* Exercises List */}
                 <div className="grid grid-cols-1 gap-6">

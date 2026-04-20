@@ -8,7 +8,6 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const [workouts, setWorkouts] = useState([]);
     const [userData, setUserData] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
 
     const token = localStorage.getItem('token');
     const API_BASE = 'http://localhost:3000/api';
@@ -29,8 +28,6 @@ export default function Dashboard() {
                 setUserData(userRes.data);
             } catch (err) {
                 console.error("Error al cargar datos:", err);
-            } finally {
-                setIsLoading(false);
             }
         };
 
@@ -48,24 +45,14 @@ export default function Dashboard() {
         const days = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
         const today = new Date();
         const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay()); // Empezamos en Domingo (0)
+        startOfWeek.setDate(today.getDate() - today.getDay());
         
-        return [1, 2, 3, 4, 5, 6, 0].map(dayIdx => { // Ordenamos L-D
+        return [1, 2, 3, 4, 5, 6, 0].map(dayIdx => {
             const dayDate = new Date(startOfWeek);
             dayDate.setDate(startOfWeek.getDate() + dayIdx);
-            
-            const hasWorkout = workouts.some(w => {
-                const wDate = new Date(w.fecha);
-                return wDate.toDateString() === dayDate.toDateString();
-            });
-
+            const hasWorkout = workouts.some(w => new Date(w.fecha).toDateString() === dayDate.toDateString());
             const isToday = dayDate.toDateString() === today.toDateString();
-            
-            return {
-                label: days[dayIdx],
-                active: hasWorkout,
-                current: isToday
-            };
+            return { label: days[dayIdx], active: hasWorkout, current: isToday };
         });
     };
 
@@ -73,13 +60,13 @@ export default function Dashboard() {
     const lastWeight = userData?.peso || '---';
 
     return (
-        <div className="min-h-screen bg-[#0a0a0e] text-white font-['Figtree'] pb-24 relative selection:bg-[#e05c2a]">
+        <div className="min-h-screen bg-[#0a0a0e] text-white font-['Figtree'] pb-28 relative selection:bg-[#e05c2a]">
             
             {/* Header */}
             <div className="flex justify-end p-6 animate-[fadeIn_0.5s_ease-out]">
                 <button 
                     onClick={handleLogout}
-                    className="w-10 h-10 rounded-full bg-[#14141e] flex items-center justify-center text-[#f5f0e8] hover:bg-red-500/20 hover:text-red-500 transition-colors"
+                    className="w-10 h-10 rounded-full bg-[#14141e] flex items-center justify-center text-[#f5f0e8] hover:bg-red-500/20 hover:text-red-500 transition-colors shadow-lg"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
@@ -114,31 +101,57 @@ export default function Dashboard() {
                 </div>
 
                 {/* Last Weight Card */}
-                <div className="bg-[#14141e] rounded-[16px] h-[90px] flex items-center justify-center mb-6 border border-white/5 shadow-lg">
+                <div className="bg-[#14141e] rounded-[16px] h-[100px] flex items-center justify-center mb-6 border border-white/5 shadow-lg">
                     <div className="flex items-baseline gap-3">
-                        <span className="font-['DM_Mono'] font-light text-[12px] text-white/70">Ultimo peso:</span>
-                        <span className="font-['DM_Mono'] text-[40px] text-white leading-none">{lastWeight}</span>
+                        <span className="font-['DM_Mono'] font-light text-[14px] text-white/70">Ultimo peso:</span>
+                        <span className="font-['DM_Mono'] text-[48px] text-white leading-none">{lastWeight}</span>
                         <span className="font-['DM_Mono'] text-[24px] text-white">kg</span>
                     </div>
                 </div>
 
-                {/* Action Button */}
+                {/* Last Workout Resume */}
+                {workouts.length > 0 && (
+                    <div 
+                        onClick={() => navigate('/workout')}
+                        className="bg-[#14141e] p-6 rounded-[16px] mb-6 border border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors shadow-lg group"
+                    >
+                        <div>
+                            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-2">Último entrenamiento</p>
+                            <p className="text-xl font-bold text-white truncate max-w-[200px]">
+                                {workouts[0].exercises[0]?.exercise?.nombre || 'Rutina'}...
+                            </p>
+                        </div>
+                        <div className="w-12 h-12 rounded-full bg-[#e05c2a]/10 flex items-center justify-center text-[#e05c2a] group-hover:scale-110 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            </svg>
+                        </div>
+                    </div>
+                )}
+
+                {/* Primary Orange Action Button */}
                 <button 
                     onClick={() => navigate('/workout')}
-                    className="w-full bg-[#e05c2a] hover:bg-[#c84d20] transition-colors rounded-[16px] h-[160px] flex flex-col items-center justify-center relative overflow-hidden group shadow-lg shadow-[#e05c2a]/10"
+                    className="w-full bg-[#e05c2a] hover:bg-[#c84d20] transition-all rounded-[20px] h-[160px] flex flex-col items-center justify-center relative overflow-hidden group shadow-2xl shadow-[#e05c2a]/30 active:scale-95 mb-8"
                 >
-                    <div className="absolute top-4 right-4 text-white opacity-80 group-hover:scale-110 transition-transform">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-500" />
+                    <div className="bg-white/20 p-4 rounded-2xl mb-4 group-hover:rotate-12 transition-transform">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-8 h-8 text-white">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>
                     </div>
-                    <span className="font-['Syne'] font-extrabold text-[28px] sm:text-[32px] text-white mt-4 tracking-wide">
-                        {workouts.length > 0 ? 'Continuar Rutina' : 'Nueva Rutina'}
+                    <span className="font-['Syne'] font-extrabold text-[28px] text-white tracking-tight">
+                        Empezar Rutina
                     </span>
-                    {workouts.length > 0 && (
-                        <span className="text-white/60 text-sm font-medium">Chest + tricep</span>
-                    )}
+                    <p className="text-white/60 text-sm font-medium mt-1 uppercase tracking-widest">Nueva sesión</p>
                 </button>
+
+                {/* Empty State / Welcome Note */}
+                {workouts.length === 0 && (
+                    <div className="py-10 text-center px-4">
+                        <p className="text-white/30 text-lg italic">"La disciplina es el puente entre las metas y los logros."</p>
+                    </div>
+                )}
             </div>
 
             <Navbar />

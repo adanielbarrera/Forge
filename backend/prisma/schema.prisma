@@ -17,6 +17,7 @@ model User {
   createdAt  DateTime    @default(now())
   workouts   Workout[]
   membership Membership?
+  templates  Template[]
 }
 
 model Workout {
@@ -28,11 +29,24 @@ model Workout {
   exercises WorkoutSet[]
 }
 
+model Template {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  descripcion String?
+  creadorId   Int
+  publico     Boolean  @default(false)
+  rutina      Json     // Ejercicios, series y reps objetivo
+  createdAt   DateTime @default(now())
+  creador     User     @relation(fields: [creadorId], references: [id])
+}
+
 model Exercise {
-  id        Int          @id @default(autoincrement())
-  nombre    String
-  categoria String?
-  sets      WorkoutSet[]
+  id                Int          @id @default(autoincrement())
+  nombre            String
+  categoria         String?
+  grupoMuscular     String?
+  musculoSecundario String?
+  sets              WorkoutSet[]
 }
 
 model WorkoutSet {
