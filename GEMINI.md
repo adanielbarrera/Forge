@@ -114,7 +114,8 @@ Forge aims to bridge the gap between "just tracking" and "coaching" by using AI 
 - [ ] **Filtrado de Historial:** Filtrar por fecha las sesiones en el historial (usar UI de pills).
 
 ### Trainer (Entrenador / Admin)
-- [ ] **Gestión de Pagos Manuales:** Habilitar botón en el dashboard para que el entrenador pueda activar membresías manualmente (recepción de efectivo).
+- [ ] **Lógica de Vencimiento Automatizada:** Implementar una verificación en el backend para que las membresías pasen a estado `VENCIDO` automáticamente si ya superaron su `fechaFin`. (Considerar Lazy Update en controladores y un Cron Job diario).
+- [ ] **Refinar Activación Manual:** Reemplazar el `prompt` actual por un modal de confirmación simple. Como todos los planes son de 1 mes, ya no se solicitará el periodo de tiempo, solo la confirmación de activación.
 - [ ] **Management de Ejercicios:** Crear un apartado para gestionar el catálogo de ejercicios:
     - Filtrar ejercicios con/sin video.
     - Adjuntar URLs de videos.
