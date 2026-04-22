@@ -14,9 +14,15 @@ const PORT = process.env.PORT || 3000;
 // 1. Cabeceras de seguridad automáticas (XSS, Clickjacking, etc.)
 app.use(helmet());
 
-// 2. CORS Restringido (Solo permitimos nuestro frontend en desarrollo)
+// 2. CORS Restringido
+const allowedOrigins = [
+    'http://localhost:5173', 
+    'http://127.0.0.1:5173',
+    process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
