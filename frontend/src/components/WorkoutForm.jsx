@@ -22,8 +22,16 @@ export default function WorkoutForm() {
     const [selectedExerciseForDetail, setSelectedExerciseForDetail] = useState(null);
     const [generatedFeedback, setGeneratedFeedback] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [workoutTitle, setWorkoutTitle] = useState('');
 
     const token = localStorage.getItem('token');
+
+    const getDefaultTitle = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Entrenamiento de la mañana';
+        if (hour < 19) return 'Entrenamiento de la tarde';
+        return 'Entrenamiento de la noche';
+    };
 
     // Timer logic
     useEffect(() => {
@@ -213,6 +221,7 @@ export default function WorkoutForm() {
             });
 
             await api.post('workouts', {
+                nombre: workoutTitle.trim() || getDefaultTitle(),
                 exercises: exercisesData,
                 feedback: generatedFeedback || null,
                 duracion: timer,
@@ -254,7 +263,20 @@ export default function WorkoutForm() {
 
                     {/* Resumen Card */}
                     <div className="bg-[#14141e] rounded-[16px] p-6 mb-6 border border-white/5 shadow-xl animate-[slideUp_0.5s_ease-out_forwards] delay-100">
-                        <h2 className="font-semibold text-[24px] mb-8">Resumen</h2>
+                        <div className="mb-8">
+                            <label className="block text-[11px] text-[#e05c2a] uppercase font-black tracking-widest mb-2 ml-1">
+                                Nombre de la sesión
+                            </label>
+                            <input 
+                                type="text"
+                                placeholder={getDefaultTitle()}
+                                value={workoutTitle}
+                                onChange={(e) => setWorkoutTitle(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-4 text-xl font-bold focus:border-[#e05c2a] outline-none transition-all placeholder:text-white/20"
+                            />
+                        </div>
+
+                        <h2 className="font-semibold text-[18px] mb-8 text-white/40 uppercase tracking-widest">Resumen</h2>
                         
                         <div className="grid grid-cols-2 gap-y-10">
                             <div className="flex flex-col">

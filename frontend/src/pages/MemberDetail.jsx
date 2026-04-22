@@ -73,7 +73,7 @@ export default function MemberDetail() {
                             <div key={w.id} className="bg-[#14141e] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
-                                        <h3 className="font-bold text-lg">{w.notas || 'Entrenamiento General'}</h3>
+                                        <h3 className="font-bold text-lg">{w.nombre || w.notas || 'Entrenamiento General'}</h3>
                                         <p className="text-white/30 text-sm font-['DM_Mono']">{formatDate(w.fecha)}</p>
                                     </div>
                                     <div className="bg-white/5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-[#c8a96e]">

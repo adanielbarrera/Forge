@@ -233,6 +233,9 @@ export default function History() {
                                     )}
                                     
                                     <div className="mb-4">
+                                        <h3 className="font-['Syne'] font-extrabold text-[22px] mb-1 text-[#f5f0e8]">
+                                            {workout.nombre || workout.exercises?.[0]?.exercise?.nombre || "Entrenamiento General"}
+                                        </h3>
                                         <p className="font-['DM_Mono'] text-[13px] text-white/40 mb-1 font-medium">
                                             {formatDate(workout.fecha)}
                                         </p>

@@ -43,13 +43,13 @@ export default function TrainerDashboard() {
         navigate('/login');
     };
 
-    const handleActivateManual = async (userId) => {
-        const months = prompt("¿Cuántos meses de membresía deseas activar?", "1");
-        if (!months) return;
+    const handleActivateManual = async (userId, userEmail) => {
+        const confirmed = window.confirm(`¿Confirmas la activación de 1 mes de membresía para ${userEmail}?`);
+        if (!confirmed) return;
 
         try {
             const now = new Date();
-            const fechaFin = new Date(now.setMonth(now.getMonth() + parseInt(months)));
+            const fechaFin = new Date(now.setMonth(now.getMonth() + 1));
 
             await api.post('memberships', {
                 userId,
@@ -251,7 +251,7 @@ export default function TrainerDashboard() {
                                                 <div className="flex justify-end gap-3 items-center">
                                                     <button 
                                                         className="text-[#6b7aff] opacity-0 group-hover:opacity-100 transition-opacity hover:underline text-xs font-bold uppercase tracking-wider"
-                                                        onClick={() => handleActivateManual(m.user.id)}
+                                                        onClick={() => handleActivateManual(m.user.id, m.user.email)}
                                                     >
                                                         {m.estado === 'ACTIVO' ? 'Renovar' : 'Activar'}
                                                     </button>

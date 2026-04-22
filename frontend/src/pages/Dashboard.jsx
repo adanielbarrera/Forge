@@ -113,7 +113,7 @@ export default function Dashboard() {
                         <div>
                             <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-2">Último entrenamiento</p>
                             <p className="text-xl font-bold text-white truncate max-w-[200px]">
-                                {workouts[0].exercises[0]?.exercise?.nombre || 'Rutina'}...
+                                {workouts[0].nombre || workouts[0].exercises[0]?.exercise?.nombre || 'Rutina'}
                             </p>
                         </div>
                         <div className="w-12 h-12 rounded-full bg-[#e05c2a]/10 flex items-center justify-center text-[#e05c2a] group-hover:scale-110 transition-transform">

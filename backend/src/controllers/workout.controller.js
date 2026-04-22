@@ -2,7 +2,7 @@ const prisma = require('../prisma');
 const { genAI } = require('../config/ai.config');
 
 const createWorkout = async (req, res) => {
-    const { notas, exercises, feedback, duracion, volumen } = req.body;
+    const { nombre, notas, exercises, feedback, duracion, volumen } = req.body;
     const userId = req.user.userId;
 
     if (!exercises || !Array.isArray(exercises) || exercises.length === 0) {
@@ -14,6 +14,7 @@ const createWorkout = async (req, res) => {
             return await tx.workout.create({
                 data: {
                     userId,
+                    nombre,
                     notas,
                     feedback,
                     duracion,
@@ -42,8 +43,13 @@ const createWorkout = async (req, res) => {
 
         res.status(201).json(workout);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Error al crear el entrenamiento" });
+        console.error("❌ Error en createWorkout:", err);
+        // Enviamos el mensaje de error específico para debuggear
+        res.status(500).json({ 
+            error: "Error al crear el entrenamiento", 
+            details: err.message,
+            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        });
     }
 };
 
