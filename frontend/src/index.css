@@ -2,3 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 @import "tailwindcss";
+
+@theme {
+  --color-forge-orange: #e05c2a;
+  --color-iron-black: #0a0a0e;
+  --color-carbon: #14141e;
+  --color-chalk: #f5f0e8;
+  --color-brass-gold: #c8a96e;
+}
+
+@layer utilities {
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Ocultar scrollbars globalmente para un look más nativo */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+

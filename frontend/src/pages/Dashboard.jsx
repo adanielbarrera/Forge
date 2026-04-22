@@ -1,11 +1,45 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/axios';
+
+import Navbar from '../components/Navbar';
 
 export default function Dashboard() {
     const navigate = useNavigate();
+    const [workouts, setWorkouts] = useState([]);
+    const [userData, setUserData] = useState(null);
 
-    // Recuperar los datos del usuario del localStorage de forma segura
-    const userString = localStorage.getItem('user');
-    const user = userString ? JSON.parse(userString) : null;
+    const token = localStorage.getItem('token');
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Obtener perfil para el peso y membresía
+                const userRes = await api.get('auth/profile');
+                setUserData(userRes.data);
+
+                // Bloqueo por membresía (solo para alumnos)
+                if (userRes.data.role === 'MEMBER') {
+                    const isInactive = !userRes.data.membership || userRes.data.membership.estado !== 'ACTIVO';
+                    if (isInactive) {
+                        navigate('/profile', { state: { message: 'Tu membresía no está activa. Renueva para continuar.' } });
+                        return;
+                    }
+                }
+
+                // Obtener entrenamientos para rachas y botón
+                const workoutsRes = await api.get('workouts');
+                setWorkouts(workoutsRes.data);
+            } catch (err) {
+                console.error("Error al cargar datos:", err);
+                if (err.response?.status === 401) {
+                    handleLogout();
+                }
+            }
+        };
+
+        if (token) fetchData();
+    }, [token]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -13,52 +47,121 @@ export default function Dashboard() {
         navigate('/login');
     };
 
+    // Lógica de rachas: Marcamos los días de la semana actual que tienen entrenamientos
+    const getStreakDays = () => {
+        const days = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        
+        return [1, 2, 3, 4, 5, 6, 0].map(dayIdx => {
+            const dayDate = new Date(startOfWeek);
+            dayDate.setDate(startOfWeek.getDate() + dayIdx);
+            const hasWorkout = workouts.some(w => new Date(w.fecha).toDateString() === dayDate.toDateString());
+            const isToday = dayDate.toDateString() === today.toDateString();
+            return { label: days[dayIdx], active: hasWorkout, current: isToday };
+        });
+    };
+
+    const userName = userData?.nombre || userData?.email?.split('@')[0] || 'Usuario';
+    const lastWeight = userData?.peso || '---';
+
     return (
-        <div className="min-h-screen bg-zinc-900 pb-20"> {/* pb-20 para dar espacio al navbar inferior */}
-            {/* Header Superior */}
-            <header className="bg-zinc-800 p-4 shadow-sm flex justify-between items-center">
-                <h1 className="text-xl font-bold text-white">Forge</h1>
-                <button
+        <div className="min-h-screen bg-[#0a0a0e] text-white font-['Figtree'] pb-28 relative selection:bg-[#e05c2a]">
+            
+            {/* Header */}
+            <div className="flex justify-end p-6 animate-[fadeIn_0.5s_ease-out]">
+                <button 
                     onClick={handleLogout}
-                    className="text-sm text-red-400 hover:text-red-300 transition-colors font-medium"
+                    className="w-10 h-10 rounded-full bg-[#14141e] flex items-center justify-center text-[#f5f0e8] hover:bg-red-500/20 hover:text-red-500 transition-colors shadow-lg"
                 >
-                    Cerrar Sesión
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+                    </svg>
                 </button>
-            </header>
+            </div>
 
-            {/* Contenido Principal */}
-            <main className="p-6">
-                <h2 className="text-2xl font-semibold text-white mb-2">
-                    Hola, {user?.email || 'Usuario'}
-                </h2>
-                <p className="text-zinc-400 mb-8">
-                    Rol actual: <span className="text-blue-400 font-medium">{user?.role}</span>
-                </p>
+            <div className="max-w-md mx-auto px-4 animate-[slideUp_0.5s_ease-out_forwards] opacity-0" style={{ animationDelay: '0.1s' }}>
+                <h1 className="font-['Syne'] font-extrabold text-[32px] sm:text-[36px] text-white mb-8 truncate">
+                    Hola {userName}
+                </h1>
 
-                <div className="bg-zinc-800 rounded-xl p-6 border border-zinc-700">
-                    <p className="text-zinc-300">
-                        Tu panel de entrenamiento está listo. Aquí se mostrará el feedback de la IA próximamente.
-                    </p>
+                {/* Streak Card */}
+                <div className="bg-[#14141e] rounded-[16px] p-5 mb-6 relative border border-white/5 shadow-lg">
+                    <div className="flex justify-end mb-4">
+                        <span className="font-semibold text-[18px] text-white">Tu racha</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center gap-1 sm:gap-2">
+                        {getStreakDays().map((day, idx) => (
+                            <div 
+                                key={idx} 
+                                className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold transition-all
+                                    ${day.active ? 'bg-[#c8a96e] text-[#f5f0e8]' : 'border-2 border-[#c8a96e]/20 text-[#f5f0e8]/40'}
+                                    ${day.current ? 'ring-2 ring-white ring-offset-2 ring-offset-[#14141e]' : ''}
+                                `}
+                            >
+                                {day.label}
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </main>
 
-            {/* Navbar Mobile Inferior */}
-            <nav className="fixed bottom-0 w-full bg-zinc-800 border-t border-zinc-700 pb-safe">
-                <div className="flex justify-around items-center p-4">
-                    <button className="flex flex-col items-center text-blue-500">
-                        <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                        <span className="text-xs font-medium">Inicio</span>
-                    </button>
-                    <button className="flex flex-col items-center text-zinc-400 hover:text-zinc-200 transition-colors">
-                        <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        <span className="text-xs font-medium">Rutinas</span>
-                    </button>
-                    <button className="flex flex-col items-center text-zinc-400 hover:text-zinc-200 transition-colors">
-                        <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        <span className="text-xs font-medium">Perfil</span>
-                    </button>
+                {/* Last Weight Card */}
+                <div className="bg-[#14141e] rounded-[16px] h-[100px] flex items-center justify-center mb-6 border border-white/5 shadow-lg">
+                    <div className="flex items-baseline gap-3">
+                        <span className="font-['DM_Mono'] font-light text-[14px] text-white/70">Ultimo peso:</span>
+                        <span className="font-['DM_Mono'] text-[48px] text-white leading-none">{lastWeight}</span>
+                        <span className="font-['DM_Mono'] text-[24px] text-white">kg</span>
+                    </div>
                 </div>
-            </nav>
+
+                {/* Last Workout Resume */}
+                {workouts.length > 0 && (
+                    <div 
+                        onClick={() => navigate('/workout')}
+                        className="bg-[#14141e] p-6 rounded-[16px] mb-6 border border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors shadow-lg group"
+                    >
+                        <div>
+                            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-2">Último entrenamiento</p>
+                            <p className="text-xl font-bold text-white truncate max-w-[200px]">
+                                {workouts[0].nombre || workouts[0].exercises[0]?.exercise?.nombre || 'Rutina'}
+                            </p>
+                        </div>
+                        <div className="w-12 h-12 rounded-full bg-[#e05c2a]/10 flex items-center justify-center text-[#e05c2a] group-hover:scale-110 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            </svg>
+                        </div>
+                    </div>
+                )}
+
+                {/* Primary Orange Action Button */}
+                <button 
+                    onClick={() => navigate('/workout')}
+                    className="w-full bg-[#e05c2a] hover:bg-[#c84d20] transition-all rounded-[20px] h-[160px] flex flex-col items-center justify-center relative overflow-hidden group shadow-2xl shadow-[#e05c2a]/30 active:scale-95 mb-8"
+                >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-500" />
+                    <div className="bg-white/20 p-4 rounded-2xl mb-4 group-hover:rotate-12 transition-transform">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-8 h-8 text-white">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                    </div>
+                    <span className="font-['Syne'] font-extrabold text-[28px] text-white tracking-tight">
+                        Empezar Rutina
+                    </span>
+                    <p className="text-white/60 text-sm font-medium mt-1 uppercase tracking-widest">Nueva sesión</p>
+                </button>
+
+                {/* Empty State / Welcome Note */}
+                {workouts.length === 0 && (
+                    <div className="py-10 text-center px-4">
+                        <p className="text-white/30 text-lg italic">"La disciplina es el puente entre las metas y los logros."</p>
+                    </div>
+                )}
+            </div>
+
+            <Navbar />
         </div>
     );
 }

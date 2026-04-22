@@ -1,18 +1,12 @@
 require('dotenv').config();
-import { PrismaPg } from "@prisma/adapter-pg";
-//import { PrismaClient } from "../prisma/generated/client";
-
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../prisma');
 
-
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+const { checkExpirations } = require('./membership.controller');
 
 const register = async (req, res) => {
-    const { email, password, role } = req.body;
+    const { email, password, role, nombre } = req.body;
 
     if (!email || !password) {
         return res.status(400).json({ error: 'Email y contraseña requeridos' });
@@ -26,11 +20,17 @@ const register = async (req, res) => {
 
         const hashed = await bcrypt.hash(password, 10);
         const user = await prisma.user.create({
-            data: { email, password: hashed, role: role ?? 'MEMBER' },
+            data: { 
+                email, 
+                password: hashed, 
+                role: role ?? 'MEMBER',
+                nombre: nombre || null
+            },
         });
 
-        res.status(201).json({ id: user.id, email: user.email, role: user.role });
+        res.status(201).json({ id: user.id, email: user.email, role: user.role, nombre: user.nombre });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
@@ -65,4 +65,59 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+const getProfile = async (req, res) => {
+    const userId = req.user.userId;
+
+    try {
+        // Actualizamos estados antes de consultar
+        await checkExpirations();
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                role: true,
+                nombre: true,
+                peso: true,
+                altura: true,
+                createdAt: true,
+                membership: true
+            }
+        });
+
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al obtener el perfil' });
+    }
+};
+
+const updateProfile = async (req, res) => {
+    const userId = req.user.userId;
+    const { nombre, peso, altura } = req.body;
+
+    try {
+        const updated = await prisma.user.update({
+            where: { id: userId },
+            data: { 
+                nombre, 
+                peso: peso ? parseFloat(peso) : undefined, 
+                altura: altura ? parseFloat(altura) : undefined 
+            },
+            select: {
+                id: true,
+                email: true,
+                nombre: true,
+                peso: true,
+                altura: true
+            }
+        });
+
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al actualizar el perfil' });
+    }
+};
+
+module.exports = { register, login, getProfile, updateProfile };

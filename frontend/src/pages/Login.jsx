@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -17,7 +17,7 @@ export default function Login() {
         setIsLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:3000/auth/login', {
+            const response = await api.post('auth/login', {
                 email,
                 password
             });
@@ -28,8 +28,12 @@ export default function Login() {
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
 
-            // Redirigir al Dashboard
-            navigate('/dashboard');
+            // Redirigir según el rol
+            if (user.role === 'TRAINER') {
+                navigate('/trainer-dashboard');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Error al iniciar sesión. Verifica tus credenciales.');
         } finally {
@@ -128,18 +132,16 @@ export default function Login() {
                             Mantener sesión iniciada
                         </label>
                     </div>
-                </form>
 
-                {/* Botón de acción naranja, fuera del panel oscuro */}
-                <button
-                    onClick={handleLogin} // También activamos el login aquí por accesibilidad
-                    type="submit"
-                    form="loginForm" // Asocia el botón al formulario
-                    disabled={isLoading}
-                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl px-4 py-4 mt-8 transition disabled:opacity-50"
-                >
-                    {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesion'}
-                </button>
+                    {/* Botón de acción naranja dentro del form */}
+                    <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl px-4 py-4 mt-4 transition disabled:opacity-50"
+                    >
+                        {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                    </button>
+                </form>
 
                 {/* Enlace inferior centrado */}
                 <div className="mt-8 flex justify-center">

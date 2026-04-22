@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model User {
+  id         Int         @id @default(autoincrement())
+  email      String      @unique
+  password   String
+  role       Role        @default(MEMBER)
+  nombre     String?
+  peso       Float?
+  altura     Float?
+  createdAt  DateTime    @default(now())
+  workouts   Workout[]
+  membership Membership?
+  templates  Template[]
+}
+
+model Workout {
+  id        Int          @id @default(autoincrement())
+  nombre    String?      // Título personalizado del entrenamiento
+  userId    Int
+  fecha     DateTime     @default(now())
+  notas     String?
+  feedback  String?
+  duracion  Int?         // Duración en segundos
+  volumen   Float?       // Volumen total en kg
+  user      User         @relation(fields: [userId], references: [id])
+  exercises WorkoutSet[]
+}
+
+model Template {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  descripcion String?
+  creadorId   Int
+  publico     Boolean  @default(false)
+  rutina      Json     // Ejercicios, series y reps objetivo
+  createdAt   DateTime @default(now())
+  creador     User     @relation(fields: [creadorId], references: [id])
+}
+
+model Exercise {
+  id                Int          @id @default(autoincrement())
+  nombre            String
+  categoria         String?
+  grupoMuscular     String?
+  musculoSecundario String?
+  videoUrl          String?
+  descripcion       String?
+  preparacion       String?
+  sets              WorkoutSet[]
+}
+
+model WorkoutSet {
+  id         Int      @id @default(autoincrement())
+  workoutId  Int
+  exerciseId Int
+  series     Int
+  reps       Int
+  peso       Float
+  workout    Workout  @relation(fields: [workoutId], references: [id])
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+}
+
+model Membership {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique
+  estado      Estado   @default(ACTIVO)
+  fechaInicio DateTime @default(now())
+  fechaFin    DateTime
+  metodoPago  String?
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model GlobalConfig {
+  id             Int @id @default(1)
+  catalogVersion Int @default(1)
+}
+
+enum Estado {
+  ACTIVO
+  VENCIDO
+  PENDIENTE
+}
+
+enum Role {
+  MEMBER
+  TRAINER
+}
