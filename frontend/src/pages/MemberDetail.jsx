@@ -47,11 +47,14 @@ export default function MemberDetail() {
     return (
         <div className="min-h-screen bg-[#0a0a0e] text-white font-['Figtree'] pb-32">
             <div className="p-6 max-w-4xl mx-auto">
-                <button onClick={() => navigate(-1)} className="text-white/40 mb-6 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                <button 
+                    onClick={() => navigate(-1)} 
+                    className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-white/60 mb-6 flex items-center gap-2"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" className="w-6 h-6">
+                        <path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z" />
                     </svg>
-                    Volver
+                    <span className="font-bold text-sm uppercase tracking-widest">Volver</span>
                 </button>
 
                 <div className="bg-[#14141e] p-8 rounded-3xl border border-white/5 mb-8 shadow-xl">

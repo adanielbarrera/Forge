@@ -23,8 +23,38 @@ export default function History() {
     const [loadingFeedback, setLoadingFeedback] = useState({});
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedExerciseForDetail, setSelectedExerciseForDetail] = useState(null);
+    const [dateFilter, setDateFilter] = useState('Todos'); // Todos, Hoy, Semana, Mes
 
     const token = localStorage.getItem('token');
+
+    const filterWorkoutsByDate = (workoutsList) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (dateFilter === 'Hoy') {
+            return workoutsList.filter(w => {
+                const d = new Date(w.fecha);
+                d.setHours(0, 0, 0, 0);
+                return d.getTime() === today.getTime();
+            });
+        }
+
+        if (dateFilter === 'Semana') {
+            const lastWeek = new Date(today);
+            lastWeek.setDate(today.getDate() - 7);
+            return workoutsList.filter(w => new Date(w.fecha) >= lastWeek);
+        }
+
+        if (dateFilter === 'Mes') {
+            const lastMonth = new Date(today);
+            lastMonth.setMonth(today.getMonth() - 1);
+            return workoutsList.filter(w => new Date(w.fecha) >= lastMonth);
+        }
+
+        return workoutsList;
+    };
+
+    const filteredWorkouts = filterWorkoutsByDate(workouts).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -221,10 +251,43 @@ export default function History() {
                 ) : (
                     /* Sessions Tab */
                     <div className="px-6 space-y-6 no-scrollbar pb-10">
-                        {workouts.length === 0 ? (
-                            <p className="text-center text-white/40 mt-10 italic">No hay sesiones registradas aún.</p>
+                        
+                        {/* Date Filter Pills */}
+                        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                            {['Todos', 'Hoy', 'Semana', 'Mes'].map(filter => (
+                                <button
+                                    key={filter}
+                                    onClick={() => setDateFilter(filter)}
+                                    className={`px-6 py-2 rounded-full text-[13px] font-bold transition-all whitespace-nowrap ${
+                                        dateFilter === filter 
+                                        ? 'bg-[#e05c2a] text-white shadow-lg shadow-[#e05c2a]/20' 
+                                        : 'bg-white/5 text-white/40 hover:bg-white/10'
+                                    }`}
+                                >
+                                    {filter}
+                                </button>
+                            ))}
+                        </div>
+
+                        {filteredWorkouts.length === 0 ? (
+                            <div className="py-20 text-center flex flex-col items-center justify-center">
+                                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-white/20 mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                                    </svg>
+                                </div>
+                                <p className="text-white/40 italic">No hay sesiones para este periodo.</p>
+                                {dateFilter !== 'Todos' && (
+                                    <button 
+                                        onClick={() => setDateFilter('Todos')}
+                                        className="mt-4 text-[#e05c2a] text-sm font-bold uppercase tracking-widest hover:underline"
+                                    >
+                                        Ver todas
+                                    </button>
+                                )}
+                            </div>
                         ) : (
-                            workouts.sort((a,b) => new Date(b.fecha) - new Date(a.fecha)).map(workout => (
+                            filteredWorkouts.map(workout => (
                                 <div key={workout.id} className="bg-[#14141e] rounded-[20px] p-6 shadow-xl border border-white/5 relative overflow-hidden active:scale-[0.98] transition-transform group">
                                     {hasNewPR(workout) && (
                                         <div className="absolute top-0 right-0 bg-[#c8a96e] text-[#0a0a0e] px-4 py-1.5 rounded-bl-xl font-black text-[11px] uppercase tracking-tighter shadow-lg">

@@ -106,18 +106,18 @@ Forge aims to bridge the gap between "just tracking" and "coaching" by using AI 
 ## Próximos Pasos (Pendientes)
 
 ### Member (Alumno)
-- [ ] **Bloqueo por Membresía:** Impedir el acceso a la pantalla principal y registro de entrenamientos si la membresía no está activa (Estado diferente de ACTIVO o fecha vencida).
+- [x] **Bloqueo por Membresía:** Impedir el acceso a la pantalla principal y registro de entrenamientos si la membresía no está activa (Estado diferente de ACTIVO o fecha vencida).
 - [x] **Título de Entrenamiento:** Guardar el título del entrenamiento en la base de datos.
     - Al mostrar el resumen, si no hay título manual, usar un placeholder por defecto: "Entrenamiento + [momento del día]" (mañana, tarde, noche, etc.).
 - [x] **Interfaz de Pagos:** Implementar la UI de suscripción accesible desde el menú de Perfil o el botón "Mi Forge".
-- [ ] **Pruebas de Pago:** Realizar pruebas exhaustivas del flujo de pago con Stripe (éxito, cancelación y actualización de membresía en DB).
+- [x] **Pruebas de Pago:** Realizar pruebas exhaustivas del flujo de pago con Stripe (éxito, cancelación y actualización de membresía en DB).
 - [x] **Feedback IA Manual:** En el resumen al finalizar un entrenamiento, quitar la generación automática y reemplazarla por un botón de "Generar Feedback" (IA).
-- [ ] **Filtrado de Historial:** Filtrar por fecha las sesiones en el historial (usar UI de pills).
+- [x] **Filtrado de Historial:** Filtrar por fecha las sesiones en el historial (usar UI de pills).
 
 ### Trainer (Entrenador / Admin)
-- [ ] **Lógica de Vencimiento Automatizada:** Implementar una verificación en el backend para que las membresías pasen a estado `VENCIDO` automáticamente si ya superaron su `fechaFin`. (Considerar Lazy Update en controladores y un Cron Job diario).
-- [ ] **Refinar Activación Manual:** Reemplazar el `prompt` actual por un modal de confirmación simple. Como todos los planes son de 1 mes, ya no se solicitará el periodo de tiempo, solo la confirmación de activación.
-- [ ] **Management de Ejercicios:** Crear un apartado para gestionar el catálogo de ejercicios:
+- [x] **Lógica de Vencimiento Automatizada:** Implementar una verificación en el backend para que las membresías pasen a estado `VENCIDO` automáticamente si ya superaron su `fechaFin`. (Considerar Lazy Update en controladores y un Cron Job diario).
+- [x] **Refinar Activación Manual:** Reemplazar el `prompt` actual por un modal de confirmación simple. Como todos los planes son de 1 mes, ya no se solicitará el periodo de tiempo, solo la confirmación de activación.
+- [x] **Management de Ejercicios:** Crear un apartado para gestionar el catálogo de ejercicios:
     - Filtrar ejercicios con/sin video.
     - Adjuntar URLs de videos.
     - Editar descripciones técnicas.

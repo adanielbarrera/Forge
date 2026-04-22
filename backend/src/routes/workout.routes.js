@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
+const { requireActiveMembership } = require('../middleware/membership.middleware');
 const {
     createWorkout,
     getWorkouts,
@@ -22,7 +23,7 @@ const {
 router.use(authenticate);
 
 // Rutas de IA
-router.post('/feedback-preview', getFeedbackPreview);
+router.post('/feedback-preview', requireActiveMembership, getFeedbackPreview);
 
 // Rutas de Plantillas
 router.get('/templates', getTemplates);
@@ -31,7 +32,7 @@ router.get('/templates/:id', getTemplateById);
 router.delete('/templates/:id', deleteTemplate);
 
 // Rutas de Entrenamientos
-router.post('/', createWorkout);
+router.post('/', requireActiveMembership, createWorkout);
 router.get('/', getWorkouts);
 router.get('/exercises', getExercises);
 router.get('/exercises/version', getCatalogVersion);

@@ -8,6 +8,7 @@ export default function ExerciseManagement() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [videoFilter, setVideoFilter] = useState('all'); // all, with, without
+    const [muscleFilter, setMuscleFilter] = useState('all');
     const [editingExercise, setEditingExercise] = useState(null);
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -21,13 +22,25 @@ export default function ExerciseManagement() {
     const [editPrep, setEditPrep] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
+    const MUSCLE_GROUPS = [
+        'Pecho',
+        'Espalda',
+        'Piernas',
+        'Hombros',
+        'Brazos',
+        'Core',
+        'Glúteos',
+        'Cardio',
+        'Full Body'
+    ];
+
     useEffect(() => {
         fetchExercises();
     }, []);
 
     useEffect(() => {
         filterExercises();
-    }, [searchTerm, videoFilter, exercises]);
+    }, [searchTerm, videoFilter, muscleFilter, exercises]);
 
     const fetchExercises = async () => {
         try {
@@ -57,6 +70,10 @@ export default function ExerciseManagement() {
             result = result.filter(ex => ex.videoUrl && ex.videoUrl.trim() !== '');
         } else if (videoFilter === 'without') {
             result = result.filter(ex => !ex.videoUrl || ex.videoUrl.trim() === '');
+        }
+
+        if (muscleFilter !== 'all') {
+            result = result.filter(ex => ex.grupoMuscular === muscleFilter);
         }
 
         setFilteredExercises(result);
@@ -135,10 +152,10 @@ export default function ExerciseManagement() {
                 <div className="flex items-center">
                     <button 
                         onClick={() => navigate('/trainer-dashboard')}
-                        className="mr-4 p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                        className="mr-4 p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-white/60"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" className="w-6 h-6">
+                            <path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z" />
                         </svg>
                     </button>
                     <h1 className="font-['Syne'] font-extrabold text-[28px] sm:text-[32px] text-white truncate">
@@ -149,8 +166,8 @@ export default function ExerciseManagement() {
                     onClick={handleCreateNew}
                     className="bg-[#e05c2a] hover:bg-[#c84d20] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-[#e05c2a]/20 active:scale-95"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" className="w-5 h-5">
+                        <path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z" />
                     </svg>
                     <span className="hidden sm:inline">Nuevo Ejercicio</span>
                 </button>
@@ -165,19 +182,29 @@ export default function ExerciseManagement() {
                 )}
 
                 {/* Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                     <div className="md:col-span-2 relative">
                         <input 
                             type="text" 
-                            placeholder="Buscar por nombre o músculo..." 
+                            placeholder="Buscar por nombre..." 
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full bg-[#14141e] border border-white/5 rounded-2xl px-12 py-4 focus:border-[#e05c2a] outline-none transition-all"
                         />
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 absolute left-4 top-4 text-white/20">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" className="w-6 h-6 absolute left-4 top-4 text-white/20">
+                            <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z" />
                         </svg>
                     </div>
+                    <select 
+                        value={muscleFilter}
+                        onChange={(e) => setMuscleFilter(e.target.value)}
+                        className="bg-[#14141e] border border-white/5 rounded-2xl px-4 py-4 focus:border-[#e05c2a] outline-none transition-all"
+                    >
+                        <option value="all">Todos los músculos</option>
+                        {MUSCLE_GROUPS.map(group => (
+                            <option key={group} value={group}>{group}</option>
+                        ))}
+                    </select>
                     <select 
                         value={videoFilter}
                         onChange={(e) => setVideoFilter(e.target.value)}
@@ -206,14 +233,17 @@ export default function ExerciseManagement() {
                                         <div className="flex gap-2">
                                             {ex.videoUrl ? (
                                                 <span className="bg-green-500/10 text-green-500 p-1.5 rounded-full">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                                                        <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/>
+                                                        <rect x="2" y="6" width="14" height="12" rx="2"/>
                                                     </svg>
                                                 </span>
                                             ) : (
                                                 <span className="bg-red-500/10 text-red-500 p-1.5 rounded-full" title="Sin video">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M12 18.75H4.5a2.25 2.25 0 0 1-2.25-2.25V9m12.845 9.75m-12.845-9.75L3 7.5m12.845 11.25 2.155 2.155m-2.155-2.155v-4.14m0 4.14-2.155-2.155m2.155 2.155L14.46 9m4.72-4.72-4.72 4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                                                        <path d="M10.66 6H14a2 2 0 0 1 2 2v2.5l5.248-3.062A.5.5 0 0 1 22 7.87v8.196"/>
+                                                        <path d="M16 16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2"/>
+                                                        <path d="m2 2 20 20"/>
                                                     </svg>
                                                 </span>
                                             )}
@@ -221,8 +251,8 @@ export default function ExerciseManagement() {
                                                 onClick={() => handleDelete(ex.id, ex.nombre)}
                                                 className="bg-white/5 text-white/20 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-full transition-all"
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.34 12m-4.74 0-.34-12m11.33 9c.3-3.97-.13-7.906-.983-11.75M21 12a42.483 42.483 0 0 0-5.384-1.093m0 0c-1.057-7.13-2.731-14.133-4.991-21.013M16.5 11.666a4.5 4.5 0 0 1-9 0m3.75 0V11.25c0-1.242.448-2.5 1.5-2.5s1.5 1.258 1.5 2.5v.416m0 0c1.057 7.13 2.731 14.133 4.991 21.013" />
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" className="w-4 h-4">
+                                                    <path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z" />
                                                 </svg>
                                             </button>
                                         </div>
@@ -253,8 +283,8 @@ export default function ExerciseManagement() {
                                 {editingExercise.id === 'new' ? 'Añadir Ejercicio' : `Editar ${editingExercise.nombre}`}
                             </h2>
                             <button onClick={() => setEditingExercise(null)} className="text-white/40 hover:text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" className="w-6 h-6">
+                                    <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
                                 </svg>
                             </button>
                         </div>
@@ -286,13 +316,16 @@ export default function ExerciseManagement() {
                                 </div>
                                 <div>
                                     <label className="block text-xs uppercase font-bold text-neutral-500 mb-2 ml-1">Grupo Muscular</label>
-                                    <input 
-                                        type="text" 
+                                    <select 
                                         value={editGroup}
                                         onChange={e => setEditGroup(e.target.value)}
-                                        placeholder="Ej: Pecho"
                                         className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-4 focus:border-[#e05c2a] outline-none"
-                                    />
+                                    >
+                                        <option value="">Selecciona un músculo</option>
+                                        {MUSCLE_GROUPS.map(group => (
+                                            <option key={group} value={group}>{group}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 

@@ -14,15 +14,27 @@ export default function Dashboard() {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Obtener perfil para el peso y membresía
+                const userRes = await api.get('auth/profile');
+                setUserData(userRes.data);
+
+                // Bloqueo por membresía (solo para alumnos)
+                if (userRes.data.role === 'MEMBER') {
+                    const isInactive = !userRes.data.membership || userRes.data.membership.estado !== 'ACTIVO';
+                    if (isInactive) {
+                        navigate('/profile', { state: { message: 'Tu membresía no está activa. Renueva para continuar.' } });
+                        return;
+                    }
+                }
+
                 // Obtener entrenamientos para rachas y botón
                 const workoutsRes = await api.get('workouts');
                 setWorkouts(workoutsRes.data);
-
-                // Obtener perfil para el peso
-                const userRes = await api.get('auth/profile');
-                setUserData(userRes.data);
             } catch (err) {
                 console.error("Error al cargar datos:", err);
+                if (err.response?.status === 401) {
+                    handleLogout();
+                }
             }
         };
 

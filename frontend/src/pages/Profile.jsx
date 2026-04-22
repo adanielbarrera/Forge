@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 
 import Navbar from '../components/Navbar';
 
 export default function Profile() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [profile, setProfile] = useState(null);
     const [newWeight, setNewWeight] = useState('');
     const [newHeight, setNewHeight] = useState('');
@@ -13,6 +14,8 @@ export default function Profile() {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
     const [isSubscribing, setIsSubscribing] = useState(false);
+
+    const message = location.state?.message;
 
     const token = localStorage.getItem('token');
 
@@ -95,7 +98,14 @@ export default function Profile() {
 
             <div className="max-w-md mx-auto px-4 mt-4">
                 
-                {/* User Info Card */}
+                {message && (
+                    <div className="bg-[#6b7aff]/10 border border-[#6b7aff] text-[#6b7aff] p-4 rounded-2xl mb-6 font-bold flex items-center gap-3 animate-pulse">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 shrink-0">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                        </svg>
+                        {message}
+                    </div>
+                )}
                 <div className="bg-[#14141e] rounded-[24px] p-6 mb-8 border border-white/5 shadow-xl">
                     <div className="flex flex-col items-center mb-6">
                         <div className="w-24 h-24 rounded-full bg-[#e05c2a]/10 flex items-center justify-center text-[#e05c2a] mb-4 border-2 border-[#e05c2a]/20">

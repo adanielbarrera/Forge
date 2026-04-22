@@ -44,8 +44,8 @@ export default function ExerciseSelector({ isOpen, onClose, onSelect, exercises 
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="font-['Syne'] font-extrabold text-2xl text-white">Ejercicios</h2>
                         <button onClick={onClose} className="text-white/40 hover:text-white">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" className="w-6 h-6">
+                                <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
                             </svg>
                         </button>
                     </div>
@@ -59,8 +59,8 @@ export default function ExerciseSelector({ isOpen, onClose, onSelect, exercises 
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#e05c2a] transition-colors"
                         />
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="absolute left-3 top-3.5 w-5 h-5 text-white/30">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" className="absolute left-3 top-3.5 w-5 h-5 text-white/30">
+                            <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z" />
                         </svg>
                     </div>
 
@@ -98,8 +98,8 @@ export default function ExerciseSelector({ isOpen, onClose, onSelect, exercises 
                                             <p className="text-xs text-white/40 mt-0.5">{ex.grupoMuscular}</p>
                                         </div>
                                         <div className="w-8 h-8 rounded-full bg-[#e05c2a]/10 flex items-center justify-center text-[#e05c2a] opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" className="w-4 h-4">
+                                                <path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z" />
                                             </svg>
                                         </div>
                                     </button>
@@ -107,8 +107,8 @@ export default function ExerciseSelector({ isOpen, onClose, onSelect, exercises 
                                         onClick={(e) => handleShowDetail(e, ex)}
                                         className="w-12 h-[60px] rounded-2xl bg-white/5 flex items-center justify-center text-white/20 hover:text-[#6B7AFF] hover:bg-[#6B7AFF]/10 transition-all"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" className="w-6 h-6">
+                                            <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v32A8,8,0,0,1,144,176ZM112,84a12,12,0,1,1,12,12A12,12,0,0,1,112,84Z" />
                                         </svg>
                                     </button>
                                 </div>
