@@ -13,8 +13,11 @@ export default function TrainerDashboard() {
     const [regName, setRegName] = useState('');
     const [regEmail, setRegEmail] = useState('');
     const [regPass, setRegPass] = useState('');
-    const [regMonths, setRegMonths] = useState(1);
     const [isRegistering, setIsRegistering] = useState(false);
+
+    // Activation modal state
+    const [confirmingActivation, setConfirmingActivation] = useState(null); // { id, email }
+    const [isActivating, setIsActivating] = useState(false);
 
     const userString = localStorage.getItem('user');
     const user = userString ? JSON.parse(userString) : null;
@@ -43,25 +46,27 @@ export default function TrainerDashboard() {
         navigate('/login');
     };
 
-    const handleActivateManual = async (userId, userEmail) => {
-        const confirmed = window.confirm(`¿Confirmas la activación de 1 mes de membresía para ${userEmail}?`);
-        if (!confirmed) return;
+    const handleActivateManual = async () => {
+        if (!confirmingActivation) return;
+        setIsActivating(true);
 
         try {
             const now = new Date();
             const fechaFin = new Date(now.setMonth(now.getMonth() + 1));
 
             await api.post('memberships', {
-                userId,
+                userId: confirmingActivation.id,
                 fechaFin: fechaFin.toISOString(),
                 estado: 'ACTIVO'
             });
 
-            alert('Membresía activada con éxito');
+            setConfirmingActivation(null);
             fetchMemberships();
         } catch (err) {
             console.error("Error activating membership:", err);
-            alert('Error al activar membresía');
+            setError('Error al activar membresía');
+        } finally {
+            setIsActivating(false);
         }
     };
 
@@ -80,9 +85,9 @@ export default function TrainerDashboard() {
 
             const newUserId = regRes.data.id;
 
-            // 2. Create Membership
+            // 2. Create Membership (Fixed 1 month)
             const now = new Date();
-            const fechaFin = new Date(now.setMonth(now.getMonth() + parseInt(regMonths)));
+            const fechaFin = new Date(now.setMonth(now.getMonth() + 1));
 
             await api.post('memberships', {
                 userId: newUserId,
@@ -90,7 +95,6 @@ export default function TrainerDashboard() {
                 estado: 'ACTIVO'
             });
 
-            alert('Alumno registrado con éxito');
             setShowRegister(false);
             setRegName('');
             setRegEmail('');
@@ -142,6 +146,15 @@ export default function TrainerDashboard() {
                         Plantillas
                     </button>
                     <button 
+                        onClick={() => navigate('/exercises')}
+                        className="bg-white/5 border border-white/10 hover:bg-[#6b7aff]/20 hover:border-[#6b7aff]/50 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                        </svg>
+                        Ejercicios
+                    </button>
+                    <button 
                         onClick={handleLogout}
                         className="w-10 h-10 rounded-full bg-[#14141e] flex items-center justify-center text-[#f5f0e8] hover:bg-red-500/20 hover:text-red-500 transition-colors"
                     >
@@ -190,14 +203,9 @@ export default function TrainerDashboard() {
                                     <label className="block text-xs uppercase font-bold text-neutral-500 mb-1 ml-1">Contraseña Temporal</label>
                                     <input required type="password" value={regPass} onChange={e => setRegPass(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:border-[#e05c2a] outline-none" placeholder="••••••••" />
                                 </div>
-                                <div>
-                                    <label className="block text-xs uppercase font-bold text-neutral-500 mb-1 ml-1">Meses de Membresía</label>
-                                    <select value={regMonths} onChange={e => setRegMonths(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:border-[#e05c2a] outline-none">
-                                        <option value="1">1 Mes</option>
-                                        <option value="3">3 Meses</option>
-                                        <option value="6">6 Meses</option>
-                                        <option value="12">1 Año</option>
-                                    </select>
+                                <div className="p-4 bg-white/5 border border-white/5 rounded-xl">
+                                    <p className="text-xs text-neutral-400 uppercase font-bold mb-1">Membresía inicial</p>
+                                    <p className="text-[#e05c2a] font-bold">1 Mes (Estándar Forge)</p>
                                 </div>
                             </div>
                             <div className="md:col-span-2 flex justify-end mt-4">
@@ -206,6 +214,38 @@ export default function TrainerDashboard() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                )}
+
+                {/* Activation Modal */}
+                {confirmingActivation && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+                        <div className="bg-[#14141e] border border-white/10 p-8 rounded-[24px] max-w-sm w-full shadow-2xl animate-in zoom-in duration-200">
+                            <div className="w-16 h-16 bg-[#6b7aff]/10 rounded-full flex items-center justify-center mb-6 mx-auto">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="#6b7aff" className="w-8 h-8">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-bold text-center mb-2">Activar Membresía</h3>
+                            <p className="text-neutral-400 text-center mb-8 text-sm">
+                                Se activará 1 mes de acceso para <span className="text-white font-medium">{confirmingActivation.email}</span>.
+                            </p>
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => setConfirmingActivation(null)}
+                                    className="flex-1 px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-colors font-semibold"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    onClick={handleActivateManual}
+                                    disabled={isActivating}
+                                    className="flex-1 px-4 py-3 rounded-xl bg-[#6b7aff] hover:bg-[#5a68e6] disabled:opacity-50 text-white font-bold transition-all shadow-lg shadow-[#6b7aff]/20"
+                                >
+                                    {isActivating ? 'Activando...' : 'Confirmar'}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -251,7 +291,7 @@ export default function TrainerDashboard() {
                                                 <div className="flex justify-end gap-3 items-center">
                                                     <button 
                                                         className="text-[#6b7aff] opacity-0 group-hover:opacity-100 transition-opacity hover:underline text-xs font-bold uppercase tracking-wider"
-                                                        onClick={() => handleActivateManual(m.user.id, m.user.email)}
+                                                        onClick={() => setConfirmingActivation({ id: m.user.id, email: m.user.email })}
                                                     >
                                                         {m.estado === 'ACTIVO' ? 'Renovar' : 'Activar'}
                                                     </button>

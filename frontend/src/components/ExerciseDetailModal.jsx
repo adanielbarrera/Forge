@@ -17,18 +17,24 @@ export default function ExerciseDetailModal({ isOpen, onClose, exercise }) {
 
     if (!isOpen || !exercise) return null;
 
-    // Helper to format YouTube URLs for embed
+    // Helper to format YouTube URLs for embed with autoplay and loop
     const getEmbedUrl = (url) => {
         if (!url) return null;
-        if (url.includes('youtube.com/embed/')) return url;
+        let videoId = '';
+        
         if (url.includes('youtu.be/')) {
-            const id = url.split('/').pop();
-            return `https://www.youtube.com/embed/${id}`;
+            videoId = url.split('/').pop().split('?')[0];
+        } else if (url.includes('v=')) {
+            videoId = url.split('v=').pop().split('&')[0];
+        } else if (url.includes('youtube.com/embed/')) {
+            videoId = url.split('embed/').pop().split('?')[0];
         }
-        if (url.includes('v=')) {
-            const id = url.split('v=').pop().split('&')[0];
-            return `https://www.youtube.com/embed/${id}`;
+
+        if (videoId) {
+            // Autoplay=1, Mute=1 (required for autoplay), Loop=1, Playlist=videoId (required for loop)
+            return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1`;
         }
+        
         return url;
     };
 

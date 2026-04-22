@@ -8,6 +8,7 @@ import WorkoutForm from './components/WorkoutForm';
 import TemplateForm from './pages/TemplateForm';
 import Templates from './pages/Templates';
 import MemberDetail from './pages/MemberDetail';
+import ExerciseManagement from './pages/ExerciseManagement';
 
 // Componente para proteger las rutas privadas
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -115,6 +116,14 @@ function App() {
                     element={
                         <ProtectedRoute allowedRole="TRAINER">
                             <MemberDetail />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/exercises"
+                    element={
+                        <ProtectedRoute allowedRole="TRAINER">
+                            <ExerciseManagement />
                         </ProtectedRoute>
                     }
                 />

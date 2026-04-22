@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import ExerciseSelector from './ExerciseSelector';
 import ExerciseDetailModal from './ExerciseDetailModal';
-import { getExercises } from '../utils/exerciseCache';
+import { getExercises, clearExercisesCache } from '../utils/exerciseCache';
 
 export default function WorkoutForm() {
     const navigate = useNavigate();
@@ -33,6 +33,12 @@ export default function WorkoutForm() {
         return 'Entrenamiento de la noche';
     };
 
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
     // Timer logic
     useEffect(() => {
         let interval = null;
@@ -44,49 +50,38 @@ export default function WorkoutForm() {
         return () => clearInterval(interval);
     }, [showSummary]);
 
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    const fetchData = async () => {
+        try {
+            const exercisesList = await getExercises(token);
+            setExercises(exercisesList);
+
+            if (templateId) {
+                const tempResponse = await api.get(`workouts/templates/${templateId}`);
+                const templateData = tempResponse.data;
+                const initialWorkoutExercises = templateData.rutina.map(item => {
+                    const fullExercise = exercisesList.find(ex => ex.id === item.exerciseId) || {};
+                    return {
+                        ...fullExercise,
+                        id: item.exerciseId,
+                        nombre: item.nombre,
+                        sets: item.sets.map((s, idx) => ({
+                            id: Date.now() + idx + Math.random(),
+                            reps: s.reps,
+                            weight: s.weight,
+                            completed: false
+                        }))
+                    };
+                });
+                setWorkoutExercises(initialWorkoutExercises);
+            }
+        } catch (err) {
+            console.error('Fetch error:', err);
+            setError('No se pudieron cargar los datos.');
+        }
     };
 
     // Fetch exercises and template if needed
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // 1. Fetch Exercises (Using Cache)
-                const exercisesList = await getExercises(token);
-                setExercises(exercisesList);
-
-                // 2. Fetch Template if provided
-                if (templateId) {
-                    const tempResponse = await api.get(`workouts/templates/${templateId}`);
-                    
-                    const templateData = tempResponse.data;
-                    // rutina is JSON: Array of { exerciseId, nombre, sets: [{ reps, weight }] }
-                    const initialWorkoutExercises = templateData.rutina.map(item => {
-                        // Buscar el ejercicio completo en la lista de ejercicios para tener videoUrl, etc.
-                        const fullExercise = exercisesList.find(ex => ex.id === item.exerciseId) || {};
-                        return {
-                            ...fullExercise,
-                            id: item.exerciseId,
-                            nombre: item.nombre,
-                            sets: item.sets.map((s, idx) => ({
-                                id: Date.now() + idx + Math.random(),
-                                reps: s.reps,
-                                weight: s.weight,
-                                completed: false
-                            }))
-                        };
-                    });
-                    setWorkoutExercises(initialWorkoutExercises);
-                }
-            } catch (err) {
-                console.error('Fetch error:', err);
-                setError('No se pudieron cargar los datos.');
-            }
-        };
-
         if (token) {
             fetchData();
         } else {

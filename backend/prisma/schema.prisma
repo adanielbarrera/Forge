@@ -77,6 +77,11 @@ model Membership {
   user        User     @relation(fields: [userId], references: [id])
 }
 
+model GlobalConfig {
+  id             Int @id @default(1)
+  catalogVersion Int @default(1)
+}
+
 enum Estado {
   ACTIVO
   VENCIDO

@@ -6,13 +6,17 @@ const {
     getWorkouts,
     getWorkoutById,
     getExercises,
+    getCatalogVersion,
     getLastValues,
     getTemplates,
     createTemplate,
     getTemplateById,
     deleteTemplate,
     getWorkoutFeedback,
-    getFeedbackPreview
+    getFeedbackPreview,
+    updateExercise,
+    createExercise,
+    deleteExercise
 } = require('../controllers/workout.controller');
 
 router.use(authenticate);
@@ -30,6 +34,10 @@ router.delete('/templates/:id', deleteTemplate);
 router.post('/', createWorkout);
 router.get('/', getWorkouts);
 router.get('/exercises', getExercises);
+router.get('/exercises/version', getCatalogVersion);
+router.post('/exercises', createExercise);
+router.patch('/exercises/:id', updateExercise);
+router.delete('/exercises/:id', deleteExercise);
 router.get('/exercises/last-values/:exerciseId', getLastValues);
 router.get('/:id', getWorkoutById);
 router.get('/:id/feedback', getWorkoutFeedback);

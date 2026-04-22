@@ -3,6 +3,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const prisma = require('../prisma');
 
+const { checkExpirations } = require('./membership.controller');
+
 const register = async (req, res) => {
     const { email, password, role, nombre } = req.body;
 
@@ -67,6 +69,9 @@ const getProfile = async (req, res) => {
     const userId = req.user.userId;
 
     try {
+        // Actualizamos estados antes de consultar
+        await checkExpirations();
+
         const user = await prisma.user.findUnique({
             where: { id: userId },
             select: {

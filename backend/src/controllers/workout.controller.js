@@ -126,6 +126,129 @@ const getExercises = async (req, res) => {
     }
 };
 
+const getCatalogVersion = async (req, res) => {
+    try {
+        // Usamos upsert para asegurar que el registro exista y obtenerlo en una sola operación
+        const config = await prisma.globalConfig.upsert({
+            where: { id: 1 },
+            update: {}, // No actualizamos nada si existe
+            create: { id: 1, catalogVersion: 1 }
+        });
+        
+        res.json({ version: config.catalogVersion });
+    } catch (err) {
+        console.error("❌ Error en getCatalogVersion:", err);
+        res.status(500).json({ error: "Error al obtener la versión del catálogo", details: err.message });
+    }
+};
+
+const updateExercise = async (req, res) => {
+    const { role } = req.user;
+    const { id } = req.params;
+    const { nombre, categoria, grupoMuscular, videoUrl, descripcion, preparacion } = req.body;
+
+    if (role !== 'TRAINER') {
+        return res.status(403).json({ error: "No tienes permiso para editar ejercicios" });
+    }
+
+    try {
+        const updated = await prisma.exercise.update({
+            where: { id: parseInt(id) },
+            data: { 
+                nombre,
+                categoria,
+                grupoMuscular,
+                videoUrl, 
+                descripcion, 
+                preparacion 
+            }
+        });
+
+        // Incrementar versión del catálogo para invalidar caché de los alumnos
+        await prisma.globalConfig.upsert({
+            where: { id: 1 },
+            update: { catalogVersion: { increment: 1 } },
+            create: { id: 1, catalogVersion: 2 }
+        });
+
+        res.json(updated);
+    } catch (err) {
+        console.error(err);
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: "Ejercicio no encontrado" });
+        }
+        res.status(500).json({ error: "Error al actualizar el ejercicio" });
+    }
+};
+
+const createExercise = async (req, res) => {
+    const { role } = req.user;
+    const { nombre, categoria, grupoMuscular, videoUrl, descripcion, preparacion } = req.body;
+
+    if (role !== 'TRAINER') {
+        return res.status(403).json({ error: "No tienes permiso para crear ejercicios" });
+    }
+
+    if (!nombre) {
+        return res.status(400).json({ error: "El nombre del ejercicio es obligatorio" });
+    }
+
+    try {
+        const exercise = await prisma.exercise.create({
+            data: {
+                nombre,
+                categoria,
+                grupoMuscular,
+                videoUrl,
+                descripcion,
+                preparacion
+            }
+        });
+
+        // Incrementar versión del catálogo
+        await prisma.globalConfig.upsert({
+            where: { id: 1 },
+            update: { catalogVersion: { increment: 1 } },
+            create: { id: 1, catalogVersion: 2 }
+        });
+
+        res.status(201).json(exercise);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error al crear el ejercicio" });
+    }
+};
+
+const deleteExercise = async (req, res) => {
+    const { role } = req.user;
+    const { id } = req.params;
+
+    if (role !== 'TRAINER') {
+        return res.status(403).json({ error: "No tienes permiso para eliminar ejercicios" });
+    }
+
+    try {
+        await prisma.exercise.delete({
+            where: { id: parseInt(id) }
+        });
+
+        // Incrementar versión del catálogo
+        await prisma.globalConfig.upsert({
+            where: { id: 1 },
+            update: { catalogVersion: { increment: 1 } },
+            create: { id: 1, catalogVersion: 2 }
+        });
+
+        res.json({ message: "Ejercicio eliminado correctamente" });
+    } catch (err) {
+        console.error(err);
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: "Ejercicio no encontrado" });
+        }
+        res.status(500).json({ error: "Error al eliminar el ejercicio" });
+    }
+};
+
 const getTemplates = async (req, res) => {
     const userId = req.user.userId;
 
@@ -376,6 +499,10 @@ module.exports = {
     getWorkouts,
     getWorkoutById,
     getExercises,
+    getCatalogVersion,
+    updateExercise,
+    createExercise,
+    deleteExercise,
     getLastValues,
     getTemplates,
     createTemplate,

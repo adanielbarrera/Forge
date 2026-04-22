@@ -52,6 +52,28 @@ const createCheckoutSession = async (req, res) => {
     }
 };
 
+const checkExpirations = async () => {
+    try {
+        const now = new Date();
+        const expired = await prisma.membership.updateMany({
+            where: {
+                estado: 'ACTIVO',
+                fechaFin: {
+                    lt: now
+                }
+            },
+            data: {
+                estado: 'VENCIDO'
+            }
+        });
+        if (expired.count > 0) {
+            console.log(`[LazyUpdate] ${expired.count} membresías marcadas como VENCIDAS.`);
+        }
+    } catch (err) {
+        console.error("Error in LazyUpdate checkExpirations:", err);
+    }
+};
+
 const getAllMemberships = async (req, res) => {
     const { role } = req.user;
 
@@ -60,6 +82,9 @@ const getAllMemberships = async (req, res) => {
     }
 
     try {
+        // Ejecutamos el lazy update antes de traer los datos
+        await checkExpirations();
+
         // Buscamos todos los usuarios que sean alumnos
         const students = await prisma.user.findMany({
             where: {
@@ -201,6 +226,7 @@ const handleWebhook = async (req, res) => {
 };
 
 module.exports = {
+    checkExpirations,
     createCheckoutSession,
     getAllMemberships,
     createMembership,
