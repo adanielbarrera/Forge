@@ -76,7 +76,8 @@ const getProfile = async (req, res) => {
                 nombre: true,
                 peso: true,
                 altura: true,
-                createdAt: true
+                createdAt: true,
+                membership: true
             }
         });
 

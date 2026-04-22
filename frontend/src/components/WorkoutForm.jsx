@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import ExerciseSelector from './ExerciseSelector';
+import ExerciseDetailModal from './ExerciseDetailModal';
 import { getExercises } from '../utils/exerciseCache';
 
 export default function WorkoutForm() {
@@ -17,9 +18,12 @@ export default function WorkoutForm() {
     const [timer, setTimer] = useState(0); // Timer in seconds
     const [showSummary, setShowSummary] = useState(false);
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [selectedExerciseForDetail, setSelectedExerciseForDetail] = useState(null);
+    const [generatedFeedback, setGeneratedFeedback] = useState('');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     const token = localStorage.getItem('token');
-    const API_BASE = 'http://localhost:3000/api';
 
     // Timer logic
     useEffect(() => {
@@ -48,22 +52,25 @@ export default function WorkoutForm() {
 
                 // 2. Fetch Template if provided
                 if (templateId) {
-                    const tempResponse = await axios.get(`${API_BASE}/workouts/templates/${templateId}`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
+                    const tempResponse = await api.get(`workouts/templates/${templateId}`);
                     
                     const templateData = tempResponse.data;
                     // rutina is JSON: Array of { exerciseId, nombre, sets: [{ reps, weight }] }
-                    const initialWorkoutExercises = templateData.rutina.map(item => ({
-                        id: item.exerciseId,
-                        nombre: item.nombre,
-                        sets: item.sets.map((s, idx) => ({
-                            id: Date.now() + idx + Math.random(),
-                            reps: s.reps,
-                            weight: s.weight,
-                            completed: false
-                        }))
-                    }));
+                    const initialWorkoutExercises = templateData.rutina.map(item => {
+                        // Buscar el ejercicio completo en la lista de ejercicios para tener videoUrl, etc.
+                        const fullExercise = exercisesList.find(ex => ex.id === item.exerciseId) || {};
+                        return {
+                            ...fullExercise,
+                            id: item.exerciseId,
+                            nombre: item.nombre,
+                            sets: item.sets.map((s, idx) => ({
+                                id: Date.now() + idx + Math.random(),
+                                reps: s.reps,
+                                weight: s.weight,
+                                completed: false
+                            }))
+                        };
+                    });
                     setWorkoutExercises(initialWorkoutExercises);
                 }
             } catch (err) {
@@ -84,9 +91,7 @@ export default function WorkoutForm() {
         let lastWeight = 20;
 
         try {
-            const res = await axios.get(`${API_BASE}/workouts/exercises/last-values/${exercise.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await api.get(`workouts/exercises/last-values/${exercise.id}`);
             lastReps = res.data.reps;
             lastWeight = res.data.peso;
         } catch (err) {
@@ -101,6 +106,13 @@ export default function WorkoutForm() {
         };
 
         setWorkoutExercises(prev => [...prev, newWorkoutExercise]);
+    };
+
+    const handleShowDetail = (exercise) => {
+        // Asegurarnos de que tenemos el objeto completo del catálogo
+        const fullEx = exercises.find(ex => ex.id === exercise.id) || exercise;
+        setSelectedExerciseForDetail(fullEx);
+        setIsDetailModalOpen(true);
     };
 
     const addSet = async (exerciseIndex) => {
@@ -159,6 +171,30 @@ export default function WorkoutForm() {
         setShowSummary(true);
     };
 
+    const handleGenerateFeedback = async () => {
+        setIsAnalyzing(true);
+        try {
+            const exercisesForIA = workoutExercises.flatMap(ex => 
+                ex.sets.map(s => ({
+                    nombre: ex.nombre,
+                    reps: Number(s.reps),
+                    peso: Number(s.weight)
+                }))
+            );
+
+            const res = await api.post('workouts/feedback-preview', {
+                exercises: exercisesForIA,
+                notas: `Entrenamiento de ${formatTime(timer)}`
+            });
+            setGeneratedFeedback(res.data.feedback);
+        } catch (err) {
+            console.error("Error generating feedback:", err);
+            setError("No se pudo generar el análisis en este momento.");
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
     const submitWorkout = async () => {
         setIsLoading(true);
         setError('');
@@ -176,28 +212,20 @@ export default function WorkoutForm() {
                 });
             });
 
-            const response = await fetch(`${API_BASE}/workouts`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    exercises: exercisesData
-                })
+            await api.post('workouts', {
+                exercises: exercisesData,
+                feedback: generatedFeedback || null,
+                duracion: timer,
+                volumen: calculateVolume(),
+                notas: `Entrenamiento de ${formatTime(timer)}`
             });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Error al guardar el entrenamiento');
-            }
 
             setWorkoutExercises([]);
             navigate('/dashboard');
         } catch (err) {
             console.error('Submit error:', err);
-            setError(err.message);
-            setShowSummary(false); // Go back to fix error if it fails
+            setError(err.response?.data?.message || err.message);
+            setShowSummary(false);
         } finally {
             setIsLoading(false);
         }
@@ -256,23 +284,47 @@ export default function WorkoutForm() {
                         </div>
                     </div>
 
-                    {/* IA Analysis Card */}
-                    <div className="bg-[#14141e] border-r border-[#6b7aff] rounded-[16px] p-6 mb-12 animate-[slideUp_0.5s_ease-out_forwards] delay-200">
-                        <p className="font-['DM_Mono'] text-[13px] text-[#6b7aff] mb-4 uppercase tracking-wider">
-                            Análisis de IA
-                        </p>
-                        <div className="font-['DM_Mono'] text-[12px] leading-relaxed space-y-2 opacity-80">
-                            <p>Es una rutina sólida y equilibrada.</p>
-                            <p>Has completado {workoutExercises.length} ejercicios diferentes hoy.</p>
-                            <p className="mt-4 text-[#6b7aff] font-bold">Sugerencia:</p>
-                            <p>Asegúrate de progresar en cargas cada semana y priorizar la técnica sobre el peso para evitar lesiones.</p>
-                        </div>
+                    {/* IA Analysis Section */}
+                    <div className="mb-12 animate-[slideUp_0.5s_ease-out_forwards] delay-200">
+                        {!generatedFeedback ? (
+                            <button 
+                                onClick={handleGenerateFeedback}
+                                disabled={isAnalyzing}
+                                className="w-full bg-[#6b7aff]/10 border border-[#6b7aff]/30 text-[#6b7aff] py-4 rounded-[16px] font-bold flex items-center justify-center gap-3 hover:bg-[#6b7aff]/20 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {isAnalyzing ? (
+                                    <>
+                                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.5 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Analizando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.25 15L17.5 17.625l-.75-2.625a2.25 2.25 0 00-1.545-1.545L12.583 12.693l2.625-.75a2.25 2.25 0 001.545-1.545L17.5 7.771l.75 2.625a2.25 2.25 0 001.545 1.545l2.625.75-2.625.75a2.25 2.25 0 00-1.545 1.545z" />
+                                        </svg>
+                                        Generar Análisis IA Forge
+                                    </>
+                                )}
+                            </button>
+                        ) : (
+                            <div className="bg-[#14141e] border-l-2 border-[#6b7aff] rounded-[16px] p-6 shadow-xl animate-[fadeIn_0.5s_ease-out]">
+                                <p className="font-['DM_Mono'] text-[11px] text-[#6b7aff] mb-4 uppercase tracking-[0.2em] font-black">
+                                    Análisis IA Forge
+                                </p>
+                                <div className="text-[15px] leading-relaxed text-[#f5f0e8]/90 whitespace-pre-line">
+                                    {generatedFeedback}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <button 
                         onClick={submitWorkout}
                         disabled={isLoading}
-                        className="w-full bg-[#e05c2a] hover:bg-[#c84d20] text-[#f5f0e8] font-semibold text-[24px] py-4 rounded-[10px] transition-all active:scale-95 disabled:opacity-50 animate-[slideUp_0.5s_ease-out_forwards] delay-300"
+                        className="w-full bg-[#e05c2a] hover:bg-[#c84d20] text-[#f5f0e8] font-['Syne'] font-black text-[22px] py-5 rounded-[16px] transition-all active:scale-95 disabled:opacity-50 animate-[slideUp_0.5s_ease-out_forwards] delay-300 shadow-xl shadow-[#e05c2a]/20"
                     >
                         {isLoading ? 'Guardando...' : 'Guardar entrenamiento'}
                     </button>
@@ -354,9 +406,15 @@ export default function WorkoutForm() {
                 <div className="grid grid-cols-1 gap-6">
                     {workoutExercises.map((exercise, exIdx) => (
                         <div key={exIdx} className="bg-[#14141e] rounded-[16px] p-4 sm:p-6 shadow-xl border border-white/5">
-                            <h3 className="text-[20px] font-medium mb-6 text-white truncate">
+                            <button 
+                                onClick={() => handleShowDetail(exercise)}
+                                className="text-[20px] font-medium mb-6 text-white truncate hover:text-[#e05c2a] transition-colors flex items-center gap-2 group/title"
+                            >
                                 {exercise.nombre}
-                            </h3>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 opacity-0 group-hover/title:opacity-100 transition-opacity">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                                </svg>
+                            </button>
 
                             <div className="grid grid-cols-4 gap-4 mb-4 px-2 text-[16px] font-medium opacity-60">
                                 <div>Set</div>
@@ -428,6 +486,12 @@ export default function WorkoutForm() {
                     </div>
                 )}
             </div>
+
+            <ExerciseDetailModal 
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                exercise={selectedExerciseForDetail}
+            />
         </div>
     );
 }

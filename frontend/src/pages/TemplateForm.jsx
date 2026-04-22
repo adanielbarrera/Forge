@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import ExerciseSelector from '../components/ExerciseSelector';
+import ExerciseDetailModal from '../components/ExerciseDetailModal';
 import { getExercises } from '../utils/exerciseCache';
 
 export default function TemplateForm() {
@@ -14,10 +15,11 @@ export default function TemplateForm() {
     const [error, setError] = useState('');
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
     const [publico, setPublico] = useState(false);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [selectedExerciseForDetail, setSelectedExerciseForDetail] = useState(null);
 
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const API_BASE = 'http://localhost:3000/api';
 
     useEffect(() => {
         const fetchExercisesData = async () => {
@@ -37,6 +39,12 @@ export default function TemplateForm() {
             nombre: exercise.nombre,
             sets: [{ reps: 10, weight: 0 }]
         }]);
+    };
+
+    const handleShowDetail = (ex) => {
+        const fullEx = exercises.find(e => e.id === ex.exerciseId) || ex;
+        setSelectedExerciseForDetail(fullEx);
+        setIsDetailModalOpen(true);
     };
 
     const addSet = (exIdx) => {
@@ -71,13 +79,11 @@ export default function TemplateForm() {
 
         setIsLoading(true);
         try {
-            await axios.post(`${API_BASE}/workouts/templates`, {
+            await api.post('workouts/templates', {
                 nombre,
                 descripcion,
                 rutina: templateExercises,
                 publico
-            }, {
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             navigate(user.role === 'TRAINER' ? '/trainer-dashboard' : '/dashboard');
         } catch {
@@ -142,7 +148,12 @@ export default function TemplateForm() {
                                 </svg>
                             </button>
                             
-                            <p className="font-bold text-lg mb-6 pr-8">{ex.nombre}</p>
+                            <button 
+                                onClick={() => handleShowDetail(ex)}
+                                className="font-bold text-lg mb-6 pr-8 hover:text-[#e05c2a] transition-colors"
+                            >
+                                {ex.nombre}
+                            </button>
 
                             <div className="grid grid-cols-3 gap-4 mb-2 text-xs font-bold uppercase text-white/30 px-2">
                                 <div>Serie</div>
@@ -205,6 +216,12 @@ export default function TemplateForm() {
                 onClose={() => setIsSelectorOpen(false)}
                 onSelect={handleAddExercise}
                 exercises={exercises}
+            />
+
+            <ExerciseDetailModal 
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                exercise={selectedExerciseForDetail}
             />
         </div>
     );

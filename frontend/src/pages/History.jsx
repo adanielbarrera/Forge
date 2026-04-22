@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 import { 
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar
 } from 'recharts';
 import Navbar from '../components/Navbar';
 import ExerciseSelector from '../components/ExerciseSelector';
+import ExerciseDetailModal from '../components/ExerciseDetailModal';
 import { getExercises } from '../utils/exerciseCache';
 
 export default function History() {
@@ -18,9 +19,12 @@ export default function History() {
     const [personalRecords, setPersonalRecords] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+    const [feedbacks, setFeedbacks] = useState({});
+    const [loadingFeedback, setLoadingFeedback] = useState({});
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [selectedExerciseForDetail, setSelectedExerciseForDetail] = useState(null);
 
     const token = localStorage.getItem('token');
-    const API_BASE = 'http://localhost:3000/api';
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -32,14 +36,21 @@ export default function History() {
 
                 // 2. Cargar datos dinámicos (que cambian siempre)
                 const [volRes, workoutRes, prRes] = await Promise.all([
-                    axios.get(`${API_BASE}/stats/weekly-volume`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                    axios.get(`${API_BASE}/workouts`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                    axios.get(`${API_BASE}/stats/personal-records`, { headers: { 'Authorization': `Bearer ${token}` } })
+                    api.get('stats/weekly-volume'),
+                    api.get('workouts'),
+                    api.get('stats/personal-records')
                 ]);
                 
                 setWeeklyVolume(volRes.data);
                 setWorkouts(workoutRes.data);
                 setPersonalRecords(prRes.data);
+
+                // Pre-cargar feedbacks existentes
+                const initialFeedbacks = {};
+                workoutRes.data.forEach(w => {
+                    if (w.feedback) initialFeedbacks[w.id] = w.feedback;
+                });
+                setFeedbacks(initialFeedbacks);
 
             } catch (err) {
                 console.error("Error al cargar datos:", err);
@@ -51,13 +62,31 @@ export default function History() {
         if (token) fetchInitialData();
     }, [token]);
 
+    const handleGetFeedback = async (id) => {
+        if (feedbacks[id]) return;
+        setLoadingFeedback(prev => ({ ...prev, [id]: true }));
+        try {
+            const res = await api.get(`workouts/${id}/feedback`);
+            setFeedbacks(prev => ({ ...prev, [id]: res.data.feedback }));
+        } catch (err) {
+            console.error("Error al obtener feedback:", err);
+        } finally {
+            setLoadingFeedback(prev => ({ ...prev, [id]: false }));
+        }
+    };
+
+    const handleShowDetail = (exercise) => {
+        // Encontrar la data completa del ejercicio desde la lista global
+        const fullEx = exercises.find(ex => ex.id === exercise.id) || exercise;
+        setSelectedExerciseForDetail(fullEx);
+        setIsDetailModalOpen(true);
+    };
+
     useEffect(() => {
         const fetchExerciseStats = async () => {
             if (!selectedExerciseId) return;
             try {
-                const res = await axios.get(`${API_BASE}/stats/exercise-progress?exerciseId=${selectedExerciseId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await api.get(`stats/exercise-progress?exerciseId=${selectedExerciseId}`);
                 setExerciseStats(res.data);
             } catch (err) {
                 console.error("Error al cargar progreso del ejercicio:", err);
@@ -82,6 +111,13 @@ export default function History() {
 
     const calculateSessionSeries = (exercises) => {
         return exercises.reduce((acc, ex) => acc + ex.series, 0);
+    };
+
+    const formatWorkoutTime = (seconds) => {
+        if (!seconds) return '--:--';
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
     const hasNewPR = (workout) => {
@@ -189,23 +225,37 @@ export default function History() {
                             <p className="text-center text-white/40 mt-10 italic">No hay sesiones registradas aún.</p>
                         ) : (
                             workouts.sort((a,b) => new Date(b.fecha) - new Date(a.fecha)).map(workout => (
-                                <div key={workout.id} className="bg-[#14141e] rounded-[20px] p-6 shadow-xl border border-white/5 relative overflow-hidden active:scale-[0.98] transition-transform">
+                                <div key={workout.id} className="bg-[#14141e] rounded-[20px] p-6 shadow-xl border border-white/5 relative overflow-hidden active:scale-[0.98] transition-transform group">
                                     {hasNewPR(workout) && (
                                         <div className="absolute top-0 right-0 bg-[#c8a96e] text-[#0a0a0e] px-4 py-1.5 rounded-bl-xl font-black text-[11px] uppercase tracking-tighter shadow-lg">
                                             ¡NUEVO PR!
                                         </div>
                                     )}
-                                    <h3 className="font-['Syne'] font-extrabold text-[22px] mb-1 text-[#f5f0e8]">
-                                        {workout.exercises?.[0]?.exercise?.nombre || "Entrenamiento General"}
-                                    </h3>
-                                    <p className="font-['DM_Mono'] text-[13px] text-white/40 mb-8 font-medium">
-                                        {formatDate(workout.fecha)}
-                                    </p>
+                                    
+                                    <div className="mb-4">
+                                        <p className="font-['DM_Mono'] text-[13px] text-white/40 mb-1 font-medium">
+                                            {formatDate(workout.fecha)}
+                                        </p>
+                                        <div className="flex flex-wrap gap-x-2 gap-y-1">
+                                            {workout.exercises.map((set, idx) => (
+                                                <button 
+                                                    key={idx}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleShowDetail(set.exercise);
+                                                    }}
+                                                    className="font-['Syne'] font-extrabold text-[18px] text-[#f5f0e8] hover:text-[#e05c2a] transition-colors flex items-center gap-1"
+                                                >
+                                                    {set.exercise.nombre}{idx < workout.exercises.length - 1 ? ',' : ''}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
 
-                                    <div className="grid grid-cols-2 gap-y-8">
+                                    <div className="grid grid-cols-2 gap-y-8 mb-4">
                                         <div className="flex flex-col items-center border-r border-white/5">
                                             <p className="font-['DM_Mono'] text-[28px] text-[#f5f0e8] leading-none mb-2 font-bold">
-                                                {calculateSessionVolume(workout.exercises).toLocaleString()}
+                                                {(workout.volumen || calculateSessionVolume(workout.exercises)).toLocaleString()}
                                                 <span className="text-sm ml-1 text-white/30">Kg</span>
                                             </p>
                                             <p className="text-[12px] font-bold uppercase tracking-widest text-white/30">Volumen</p>
@@ -213,7 +263,9 @@ export default function History() {
 
                                         <div className="flex flex-col gap-6 pl-8">
                                             <div className="flex flex-col">
-                                                <p className="font-['DM_Mono'] text-[24px] text-[#f5f0e8] leading-none mb-1 font-bold">01:15</p>
+                                                <p className="font-['DM_Mono'] text-[24px] text-[#f5f0e8] leading-none mb-1 font-bold">
+                                                    {formatWorkoutTime(workout.duracion) === '--:--' ? '01:15' : formatWorkoutTime(workout.duracion)}
+                                                </p>
                                                 <p className="text-[11px] font-bold uppercase tracking-widest text-white/30">Tiempo</p>
                                             </div>
                                             <div className="flex flex-col">
@@ -223,6 +275,44 @@ export default function History() {
                                                 <p className="text-[11px] font-bold uppercase tracking-widest text-white/30">Series</p>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    {/* IA Feedback Section */}
+                                    <div className="mt-6 pt-6 border-t border-white/5">
+                                        {feedbacks[workout.id] ? (
+                                            <div className="bg-[#6B7AFF]/10 border border-[#6B7AFF]/30 rounded-[14px] p-4 animate-[fadeIn_0.5s_ease-out]">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className="w-2 h-2 rounded-full bg-[#6B7AFF] animate-pulse"></div>
+                                                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B7AFF]">Análisis de IA Forge</span>
+                                                </div>
+                                                <p className="text-[#f5f0e8]/90 text-[14px] leading-relaxed italic">
+                                                    "{feedbacks[workout.id]}"
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleGetFeedback(workout.id);
+                                                }}
+                                                disabled={loadingFeedback[workout.id]}
+                                                className="w-full h-[48px] bg-[#6B7AFF]/10 border border-[#6B7AFF]/30 rounded-xl text-[#6B7AFF] font-bold text-[13px] uppercase tracking-widest hover:bg-[#6B7AFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                            >
+                                                {loadingFeedback[workout.id] ? (
+                                                    <>
+                                                        <div className="w-4 h-4 border-2 border-[#6B7AFF] border-t-transparent rounded-full animate-spin"></div>
+                                                        Analizando...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                        </svg>
+                                                        Pedir análisis IA
+                                                    </>
+                                                )}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ))
@@ -252,6 +342,12 @@ export default function History() {
             </div>
 
             <Navbar />
+
+            <ExerciseDetailModal 
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                exercise={selectedExerciseForDetail}
+            />
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 
 import Navbar from '../components/Navbar';
 
@@ -12,16 +12,14 @@ export default function Profile() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
+    const [isSubscribing, setIsSubscribing] = useState(false);
 
     const token = localStorage.getItem('token');
-    const API_BASE = 'http://localhost:3000/api';
 
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const response = await axios.get('http://localhost:3000/auth/profile', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await api.get('auth/profile');
                 setProfile(response.data);
                 setNewWeight(response.data.peso || '');
                 setNewHeight(response.data.altura || '');
@@ -36,15 +34,29 @@ export default function Profile() {
         if (token) fetchProfile();
     }, [token]);
 
+    const handleSubscribe = async (planId) => {
+        setIsSubscribing(true);
+        try {
+            const response = await api.post('memberships/checkout-session', { planId });
+            if (response.data.url) {
+                window.location.href = response.data.url;
+            }
+        } catch (err) {
+            setError('Error al iniciar el proceso de pago.');
+            console.error(err);
+        } finally {
+            setIsSubscribing(false);
+        }
+    };
+
     const handleUpdate = async (e) => {
         e.preventDefault();
         setIsSaving(true);
         setError('');
 
         try {
-            const response = await axios.patch('http://localhost:3000/auth/profile', 
-                { peso: newWeight, altura: newHeight },
-                { headers: { 'Authorization': `Bearer ${token}` } }
+            const response = await api.patch('auth/profile', 
+                { peso: newWeight, altura: newHeight }
             );
             setProfile(prev => ({ ...prev, ...response.data }));
             alert('¡Perfil actualizado con éxito!');
@@ -109,6 +121,46 @@ export default function Profile() {
                             </p>
                         </div>
                     </div>
+                </div>
+
+                {/* Membership Section */}
+                <div className="bg-[#14141e] rounded-[24px] p-6 mb-8 border border-white/5 shadow-xl">
+                    <h3 className="text-lg font-bold mb-4 font-['Syne'] text-[#6b7aff]">Membresía</h3>
+                    
+                    {profile?.membership && profile.membership.estado === 'ACTIVO' ? (
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center bg-green-500/10 p-4 rounded-2xl border border-green-500/20">
+                                <div>
+                                    <p className="text-green-500 font-bold text-sm uppercase tracking-wider">Estado: ACTIVO</p>
+                                    <p className="text-neutral-400 text-xs mt-1">Vence el {new Date(profile.membership.fechaFin).toLocaleDateString()}</p>
+                                </div>
+                                <div className="text-green-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <p className="text-neutral-400 text-sm mb-4">No tienes una membresía activa. Suscríbete para empezar a entrenar.</p>
+                            
+                            <button 
+                                onClick={() => handleSubscribe('mensual')}
+                                disabled={isSubscribing}
+                                className="w-full flex justify-between items-center bg-[#6b7aff]/10 p-5 rounded-2xl border border-[#6b7aff]/30 hover:bg-[#6b7aff]/20 transition-all group"
+                            >
+                                <div className="text-left">
+                                    <p className="font-bold text-[#6b7aff] text-lg">Plan Mensual Forge</p>
+                                    <p className="text-xs text-neutral-400">Acceso total al gimnasio y seguimiento IA</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-['DM_Mono'] font-bold text-[#6b7aff] text-xl">$599</p>
+                                    <p className="text-[10px] text-[#6b7aff]/60 uppercase font-bold">MXN / MES</p>
+                                </div>
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {error && <div className="text-red-500 text-sm mb-4 text-center">{error}</div>}

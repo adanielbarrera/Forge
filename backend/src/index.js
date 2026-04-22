@@ -29,10 +29,14 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// 4. Webhook de Stripe (Debe ir ANTES de express.json() para procesar el signature correctamente)
+const membershipController = require('./controllers/membership.controller');
+app.post('/api/memberships/webhook', express.raw({ type: 'application/json' }), membershipController.handleWebhook);
+
 app.use(express.json());
 
-// 4. Rutas protegidas
-app.use('/auth', authRoutes);
+// 5. Rutas protegidas
+app.use('/api/auth', authRoutes);
 app.use('/api/workouts', workoutRoutes);
 app.use('/api/memberships', membershipRoutes);
 app.use('/api/stats', statsRoutes);

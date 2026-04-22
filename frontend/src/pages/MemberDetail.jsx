@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import Navbar from '../components/Navbar';
+import ExerciseDetailModal from '../components/ExerciseDetailModal';
 
 export default function MemberDetail() {
     const { id } = useParams();
@@ -9,33 +10,37 @@ export default function MemberDetail() {
     const [workouts, setWorkouts] = useState([]);
     const [member, setMember] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [selectedExerciseForDetail, setSelectedExerciseForDetail] = useState(null);
 
     const token = localStorage.getItem('token');
-    const API_BASE = 'http://localhost:3000/api';
 
     useEffect(() => {
         const fetchMemberData = async () => {
             try {
                 // Aquí necesitaríamos un endpoint en el backend para obtener workouts por userId
                 // Por ahora, si el backend no lo soporta, filtramos o mostramos un placeholder
-                const res = await axios.get(`${API_BASE}/workouts`, {
-                    headers: { 'Authorization': `Bearer ${token}` },
+                const res = await api.get('workouts', {
                     params: { userId: id } // El backend debería filtrar por esto si es TRAINER
                 });
                 setWorkouts(res.data);
-                
+
                 // Mock de datos del miembro si no tenemos el endpoint de perfil de otro usuario
                 setMember({ nombre: 'Alumno', email: 'alumno@ejemplo.com' });
-
             } catch (err) {
-                console.error("Error fetching member data:", err);
+                console.error("Error al cargar datos del miembro:", err);
             } finally {
                 setIsLoading(false);
             }
         };
 
         if (token) fetchMemberData();
-    }, [id, token]);
+    }, [token, id]);
+
+    const handleShowDetail = (exercise) => {
+        setSelectedExerciseForDetail(exercise);
+        setIsDetailModalOpen(true);
+    };
 
     const formatDate = (date) => new Date(date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
 
@@ -76,15 +81,16 @@ export default function MemberDetail() {
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-4">
-                                    {w.exercises.slice(0, 2).map((ex, idx) => (
-                                        <div key={idx} className="text-xs">
-                                            <p className="text-white/60 font-semibold truncate">{ex.exercise.nombre}</p>
-                                            <p className="text-white/30">{ex.series} series • {ex.peso}kg</p>
-                                        </div>
+                                    {w.exercises.map((ex, idx) => (
+                                        <button 
+                                            key={idx} 
+                                            onClick={() => handleShowDetail(ex.exercise)}
+                                            className="text-left group"
+                                        >
+                                            <p className="text-white/60 font-semibold truncate group-hover:text-[#e05c2a] transition-colors">{ex.exercise.nombre}</p>
+                                            <p className="text-white/30 text-[10px]">{ex.series} series • {ex.peso}kg</p>
+                                        </button>
                                     ))}
-                                    {w.exercises.length > 2 && (
-                                        <p className="text-[10px] text-white/20 mt-1 col-span-2">+{w.exercises.length - 2} ejercicios más</p>
-                                    )}
                                 </div>
                             </div>
                         ))
@@ -93,6 +99,12 @@ export default function MemberDetail() {
             </div>
 
             <Navbar />
+
+            <ExerciseDetailModal 
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                exercise={selectedExerciseForDetail}
+            />
         </div>
     );
 }

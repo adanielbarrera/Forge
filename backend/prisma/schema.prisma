@@ -25,6 +25,9 @@ model Workout {
   userId    Int
   fecha     DateTime     @default(now())
   notas     String?
+  feedback  String?
+  duracion  Int?         // Duración en segundos
+  volumen   Float?       // Volumen total en kg
   user      User         @relation(fields: [userId], references: [id])
   exercises WorkoutSet[]
 }
@@ -46,6 +49,9 @@ model Exercise {
   categoria         String?
   grupoMuscular     String?
   musculoSecundario String?
+  videoUrl          String?
+  descripcion       String?
+  preparacion       String?
   sets              WorkoutSet[]
 }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import Navbar from '../components/Navbar';
 
 export default function Templates() {
@@ -8,13 +8,10 @@ export default function Templates() {
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
-    const API_BASE = 'http://localhost:3000/api';
 
     const fetchTemplates = async () => {
         try {
-            const res = await axios.get(`${API_BASE}/workouts/templates`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await api.get('workouts/templates');
             setTemplates(res.data);
         } catch (err) {
             console.error("Error al cargar plantillas:", err);
@@ -30,12 +27,11 @@ export default function Templates() {
     const handleDelete = async (id) => {
         if (!window.confirm('¿Estás seguro de eliminar esta plantilla?')) return;
         try {
-            // Asumiendo que implementaremos DELETE /templates/:id en el futuro
-            // Por ahora solo filtramos localmente si el backend no lo tiene
+            await api.delete(`workouts/templates/${id}`);
             setTemplates(templates.filter(t => t.id !== id));
-            alert('Plantilla eliminada (Simulado)');
         } catch (err) {
-            alert('Error al eliminar');
+            console.error(err);
+            alert('Error al eliminar la plantilla');
         }
     };
 

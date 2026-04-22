@@ -102,3 +102,21 @@ Key models:
 
 ## Project Vision
 Forge aims to bridge the gap between "just tracking" and "coaching" by using AI to analyze session data and provide actionable motivational feedback directly to the athlete.
+
+## Próximos Pasos (Pendientes)
+
+### Member (Alumno)
+- [ ] **Bloqueo por Membresía:** Impedir el acceso a la pantalla principal y registro de entrenamientos si la membresía no está activa (Estado diferente de ACTIVO o fecha vencida).
+- [ ] **Título de Entrenamiento:** Guardar el título del entrenamiento en la base de datos.
+    - Al mostrar el resumen, si no hay título manual, usar un placeholder por defecto: "Entrenamiento + [momento del día]" (mañana, tarde, noche, etc.).
+- [ ] **Interfaz de Pagos:** Implementar la UI de suscripción accesible desde el menú de Perfil o el botón "Mi Forge".
+- [ ] **Feedback IA Manual:** En el resumen al finalizar un entrenamiento, quitar la generación automática y reemplazarla por un botón de "Generar Feedback" (IA).
+- [ ] **Filtrado de Historial:** Filtrar por fecha las sesiones en el historial (usar UI de pills).
+
+### Trainer (Entrenador / Admin)
+- [ ] **Gestión de Pagos Manuales:** Habilitar botón en el dashboard para que el entrenador pueda activar membresías manualmente (recepción de efectivo).
+- [ ] **Management de Ejercicios:** Crear un apartado para gestionar el catálogo de ejercicios:
+    - Filtrar ejercicios con/sin video.
+    - Adjuntar URLs de videos.
+    - Editar descripciones técnicas.
+    - Guardar cambios en la base de datos.

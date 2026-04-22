@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 
 import Navbar from '../components/Navbar';
 
@@ -10,21 +10,16 @@ export default function Dashboard() {
     const [userData, setUserData] = useState(null);
 
     const token = localStorage.getItem('token');
-    const API_BASE = 'http://localhost:3000/api';
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 // Obtener entrenamientos para rachas y botón
-                const workoutsRes = await axios.get(`${API_BASE}/workouts`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const workoutsRes = await api.get('workouts');
                 setWorkouts(workoutsRes.data);
 
                 // Obtener perfil para el peso
-                const userRes = await axios.get('http://localhost:3000/auth/profile', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const userRes = await api.get('auth/profile');
                 setUserData(userRes.data);
             } catch (err) {
                 console.error("Error al cargar datos:", err);

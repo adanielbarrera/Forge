@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from '../api/axios';
 
 const EXERCISES_CACHE_KEY = 'forge_exercises_cache';
 const CACHE_DURATION = 1000 * 60 * 60 * 24; // 24 horas
@@ -21,9 +21,7 @@ export const getExercises = async (token) => {
 
     console.log('🚀 Pidiendo ejercicios al servidor...');
     try {
-        const res = await axios.get('http://localhost:3000/api/workouts/exercises', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const res = await api.get('workouts/exercises');
         
         const cacheData = {
             data: res.data,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 
 export default function TrainerDashboard() {
     const [memberships, setMemberships] = useState([]);
@@ -23,9 +23,7 @@ export default function TrainerDashboard() {
 
     const fetchMemberships = async () => {
         try {
-            const response = await axios.get('http://localhost:3000/api/memberships', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get('memberships');
             setMemberships(response.data);
         } catch (err) {
             setError('No se pudieron cargar los alumnos.');
@@ -45,13 +43,35 @@ export default function TrainerDashboard() {
         navigate('/login');
     };
 
+    const handleActivateManual = async (userId) => {
+        const months = prompt("¿Cuántos meses de membresía deseas activar?", "1");
+        if (!months) return;
+
+        try {
+            const now = new Date();
+            const fechaFin = new Date(now.setMonth(now.getMonth() + parseInt(months)));
+
+            await api.post('memberships', {
+                userId,
+                fechaFin: fechaFin.toISOString(),
+                estado: 'ACTIVO'
+            });
+
+            alert('Membresía activada con éxito');
+            fetchMemberships();
+        } catch (err) {
+            console.error("Error activating membership:", err);
+            alert('Error al activar membresía');
+        }
+    };
+
     const handleRegister = async (e) => {
         e.preventDefault();
         setIsRegistering(true);
         setError('');
         try {
             // 1. Register User
-            const regRes = await axios.post('http://localhost:3000/auth/register', {
+            const regRes = await api.post('auth/register', {
                 email: regEmail,
                 password: regPass,
                 nombre: regName,
@@ -64,12 +84,10 @@ export default function TrainerDashboard() {
             const now = new Date();
             const fechaFin = new Date(now.setMonth(now.getMonth() + parseInt(regMonths)));
 
-            await axios.post('http://localhost:3000/api/memberships', {
+            await api.post('memberships', {
                 userId: newUserId,
                 fechaFin: fechaFin.toISOString(),
                 estado: 'ACTIVO'
-            }, {
-                headers: { 'Authorization': `Bearer ${token}` }
             });
 
             alert('Alumno registrado con éxito');
@@ -227,15 +245,23 @@ export default function TrainerDashboard() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-neutral-300 text-sm font-['DM_Mono']">
-                                                {new Date(m.fechaFin).toLocaleDateString()}
+                                                {m.fechaFin ? new Date(m.fechaFin).toLocaleDateString() : 'N/A'}
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <button 
-                                                    className="text-[#e05c2a] opacity-0 group-hover:opacity-100 transition-opacity hover:underline text-sm font-semibold"
-                                                    onClick={() => navigate(`/member/${m.userId}`)}
-                                                >
-                                                    Gestionar
-                                                </button>
+                                                <div className="flex justify-end gap-3 items-center">
+                                                    <button 
+                                                        className="text-[#6b7aff] opacity-0 group-hover:opacity-100 transition-opacity hover:underline text-xs font-bold uppercase tracking-wider"
+                                                        onClick={() => handleActivateManual(m.user.id)}
+                                                    >
+                                                        {m.estado === 'ACTIVO' ? 'Renovar' : 'Activar'}
+                                                    </button>
+                                                    <button 
+                                                        className="text-[#e05c2a] opacity-0 group-hover:opacity-100 transition-opacity hover:underline text-xs font-bold uppercase tracking-wider"
+                                                        onClick={() => navigate(`/member/${m.user.id}`)}
+                                                    >
+                                                        Historial
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -265,7 +291,10 @@ export default function TrainerDashboard() {
                     </svg>
                     <span className="text-[10px] mt-1 font-medium">Rutinas</span>
                 </button>
-                <button className="flex flex-col items-center justify-center w-12 h-12 text-[#f5f0e8] opacity-40 hover:opacity-100 transition-opacity">
+                <button 
+                    onClick={() => navigate('/profile')}
+                    className="flex flex-col items-center justify-center w-12 h-12 text-[#f5f0e8] opacity-40 hover:opacity-100 transition-opacity"
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                     </svg>

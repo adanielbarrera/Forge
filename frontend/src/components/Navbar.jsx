@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 
 export default function Navbar() {
     const navigate = useNavigate();
@@ -8,14 +8,11 @@ export default function Navbar() {
     const [showActions, setShowActions] = useState(false);
     const [templates, setTemplates] = useState([]);
     const token = localStorage.getItem('token');
-    const API_BASE = 'http://localhost:3000/api';
 
     useEffect(() => {
         const fetchTemplates = async () => {
             try {
-                const res = await axios.get(`${API_BASE}/workouts/templates`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await api.get('workouts/templates');
                 setTemplates(res.data);
             } catch (err) {
                 console.error("Error fetching templates in Navbar:", err);
