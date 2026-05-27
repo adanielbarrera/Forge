@@ -69,17 +69,6 @@ export default function Navbar() {
                     </button>
                 </div>
 
-                {/* IA / AI (Placeholder or Stats) */}
-                <button 
-                    onClick={() => alert('Próximamente: Análisis IA')}
-                    className="flex flex-col items-center justify-center w-12 h-12 text-[#f5f0e8]/40 hover:text-[#6b7aff] transition-all"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                    </svg>
-                    <span className="text-[10px] mt-1 font-medium">IA Forge</span>
-                </button>
-
                 {/* Profile */}
                 <button 
                     onClick={() => navigate('/profile')}
