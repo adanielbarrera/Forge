@@ -102,8 +102,13 @@ export default function History() {
             setFeedbacks(prev => ({ ...prev, [id]: res.data.feedback }));
         } catch (err) {
             console.error("Error al obtener feedback:", err);
-            const errorMsg = err.response?.data?.details || err.response?.data?.error || "Error al generar feedback";
-            setFeedbackErrors(prev => ({ ...prev, [id]: errorMsg }));
+            // Mensaje amigable para el usuario, pero guardamos el técnico en consola
+            const technicalDetail = err.response?.data?.details || "";
+            if (technicalDetail.includes("location is not supported")) {
+                setFeedbackErrors(prev => ({ ...prev, [id]: "El servicio de IA no está disponible en tu región actual." }));
+            } else {
+                setFeedbackErrors(prev => ({ ...prev, [id]: "No pudimos generar el análisis. Inténtalo más tarde." }));
+            }
         } finally {
             setLoadingFeedback(prev => ({ ...prev, [id]: false }));
         }

@@ -192,8 +192,12 @@ export default function WorkoutForm() {
             setGeneratedFeedback(res.data.feedback);
         } catch (err) {
             console.error("Error generating feedback:", err);
-            const detail = err.response?.data?.details || err.response?.data?.error;
-            setError(detail ? `Error IA: ${detail}` : "No se pudo generar el análisis en este momento.");
+            const detail = err.response?.data?.details || "";
+            if (detail.includes("location is not supported")) {
+                setError("El análisis de IA no está disponible en esta región.");
+            } else {
+                setError("No se pudo generar el análisis en este momento.");
+            }
         } finally {
             setIsAnalyzing(false);
         }
