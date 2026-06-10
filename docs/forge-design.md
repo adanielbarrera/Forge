@@ -48,17 +48,17 @@ El contenido generado por IA siempre se identifica visualmente con Pulse Blue. E
 
 ### Paleta Principal
 
-| Token | Hex | Uso |
-|---|---|---|
-| `--color-orange` | `#E05C2A` | CTAs primarios, acciones de registro, highlights críticos |
-| `--color-iron` | `#0A0A0E` | Fondo mobile |
-| `--color-carbon` | `#14141E` | Surface dark, cards en mobile |
-| `--color-brass` | `#C8A96E` | PRs, logros, elementos premium |
-| `--color-chalk` | `#F5F0E8` | Texto principal sobre dark |
-| `--color-offwhite` | `#FAFAF7` | Fondo desktop |
-| `--color-green` | `#2ECC8C` | Éxito, progreso, completado |
-| `--color-red` | `#E84C6A` | Errores, alertas, cancelar |
-| `--color-blue` | `#6B7AFF` | IA, información, links |
+| Token              | Hex       | Uso                                                       |
+| ------------------ | --------- | --------------------------------------------------------- |
+| `--color-orange`   | `#E05C2A` | CTAs primarios, acciones de registro, highlights críticos |
+| `--color-iron`     | `#0A0A0E` | Fondo mobile                                              |
+| `--color-carbon`   | `#14141E` | Surface dark, cards en mobile                             |
+| `--color-brass`    | `#C8A96E` | PRs, logros, elementos premium                            |
+| `--color-chalk`    | `#F5F0E8` | Texto principal sobre dark                                |
+| `--color-offwhite` | `#FAFAF7` | Fondo desktop                                             |
+| `--color-green`    | `#2ECC8C` | Éxito, progreso, completado                               |
+| `--color-red`      | `#E84C6A` | Errores, alertas, cancelar                                |
+| `--color-blue`     | `#6B7AFF` | IA, información, links                                    |
 
 ### Paleta de Apoyo
 
@@ -101,21 +101,21 @@ AI card bg:     rgba(107, 122, 255, 0.08)
 
 ### Escala de Tamaños
 
-| Nombre | Familia | Peso | Tamaño | Interlineado | Uso |
-|---|---|---|---|---|---|
-| `display` | Syne | 800 | 48px | 1.0 | Wordmark, hero |
-| `h1` | Syne | 800 | 32px | 1.1 | Títulos de pantalla |
-| `h2` | Syne | 800 | 24px | 1.2 | Subtítulos de sección |
-| `h3` | Figtree | 600 | 18px | 1.3 | Encabezados de card |
-| `body-lg` | Figtree | 400 | 16px | 1.6 | Texto corrido |
-| `body` | Figtree | 400 | 14px | 1.6 | Texto secundario |
-| `label` | Figtree | 500 | 13px | 1.4 | Labels de input, nav |
-| `caption` | Figtree | 400 | 11px | 1.4 | Hints, timestamps |
-| `tag` | DM Mono | 500 | 10px | 1.0 | Chips, categorías |
-| `data-xl` | DM Mono | 500 | 32px | 1.0 | Métricas hero |
-| `data-lg` | DM Mono | 500 | 24px | 1.0 | Métricas de card |
-| `data-md` | DM Mono | 500 | 18px | 1.0 | Valores en tabla |
-| `data-sm` | DM Mono | 400 | 14px | 1.0 | Datos inline |
+| Nombre    | Familia | Peso | Tamaño | Interlineado | Uso                   |
+| --------- | ------- | ---- | ------ | ------------ | --------------------- |
+| `display` | Syne    | 800  | 48px   | 1.0          | Wordmark, hero        |
+| `h1`      | Syne    | 800  | 32px   | 1.1          | Títulos de pantalla   |
+| `h2`      | Syne    | 800  | 24px   | 1.2          | Subtítulos de sección |
+| `h3`      | Figtree | 600  | 18px   | 1.3          | Encabezados de card   |
+| `body-lg` | Figtree | 400  | 16px   | 1.6          | Texto corrido         |
+| `body`    | Figtree | 400  | 14px   | 1.6          | Texto secundario      |
+| `label`   | Figtree | 500  | 13px   | 1.4          | Labels de input, nav  |
+| `caption` | Figtree | 400  | 11px   | 1.4          | Hints, timestamps     |
+| `tag`     | DM Mono | 500  | 10px   | 1.0          | Chips, categorías     |
+| `data-xl` | DM Mono | 500  | 32px   | 1.0          | Métricas hero         |
+| `data-lg` | DM Mono | 500  | 24px   | 1.0          | Métricas de card      |
+| `data-md` | DM Mono | 500  | 18px   | 1.0          | Valores en tabla      |
+| `data-sm` | DM Mono | 400  | 14px   | 1.0          | Datos inline          |
 
 ### Regla de Oro
 

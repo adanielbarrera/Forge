@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --exec tsx src/index.js",
+    "seed:demo": "node seed_demo.js",
     "start": "node src/index.js"
   },
   "keywords": [],
