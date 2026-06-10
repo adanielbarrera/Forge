@@ -192,7 +192,8 @@ export default function WorkoutForm() {
             setGeneratedFeedback(res.data.feedback);
         } catch (err) {
             console.error("Error generating feedback:", err);
-            setError("No se pudo generar el análisis en este momento.");
+            const detail = err.response?.data?.details || err.response?.data?.error;
+            setError(detail ? `Error IA: ${detail}` : "No se pudo generar el análisis en este momento.");
         } finally {
             setIsAnalyzing(false);
         }
