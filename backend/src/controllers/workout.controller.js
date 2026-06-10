@@ -410,7 +410,7 @@ const getWorkoutFeedback = async (req, res) => {
             return res.json({ feedback: workout.feedback });
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const prompt = `Eres un entrenador personal experto de la app "Forge". 
         Analiza el entrenamiento de ${workout.user.nombre || 'el usuario'} y dale feedback breve, motivador y técnico.
@@ -470,7 +470,7 @@ const getFeedbackPreview = async (req, res) => {
             exercisesSummary[ex.nombre].series += 1;
         });
 
-        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const prompt = `Eres un entrenador personal experto de la app "Forge". 
         Analiza el entrenamiento de ${user.nombre || 'el usuario'} y dale feedback breve, motivador y técnico.
