@@ -21,6 +21,7 @@ export default function History() {
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
     const [feedbacks, setFeedbacks] = useState({});
     const [loadingFeedback, setLoadingFeedback] = useState({});
+    const [feedbackErrors, setFeedbackErrors] = useState({});
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedExerciseForDetail, setSelectedExerciseForDetail] = useState(null);
     const [dateFilter, setDateFilter] = useState('Todos'); // Todos, Hoy, Semana, Mes
