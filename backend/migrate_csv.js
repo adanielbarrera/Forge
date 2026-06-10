@@ -141,6 +141,13 @@ async function migrate() {
             if (workoutCount % 10 === 0) console.log(`  > ${workoutCount} sesiones importadas...`);
         }
 
+        console.log('--- Incrementando versión del catálogo ---');
+        await prisma.globalConfig.upsert({
+            where: { id: 1 },
+            update: { catalogVersion: { increment: 1 } },
+            create: { id: 1, catalogVersion: 2 }
+        });
+
         console.log(`✅ Éxito: ${workoutCount} sesiones importadas para el usuario 14.`);
     } catch (error) {
         console.error('❌ Error crítico:', error);

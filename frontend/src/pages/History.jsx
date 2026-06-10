@@ -95,11 +95,14 @@ export default function History() {
     const handleGetFeedback = async (id) => {
         if (feedbacks[id]) return;
         setLoadingFeedback(prev => ({ ...prev, [id]: true }));
+        setFeedbackErrors(prev => ({ ...prev, [id]: null }));
         try {
             const res = await api.get(`workouts/${id}/feedback`);
             setFeedbacks(prev => ({ ...prev, [id]: res.data.feedback }));
         } catch (err) {
             console.error("Error al obtener feedback:", err);
+            const errorMsg = err.response?.data?.details || err.response?.data?.error || "Error al generar feedback";
+            setFeedbackErrors(prev => ({ ...prev, [id]: errorMsg }));
         } finally {
             setLoadingFeedback(prev => ({ ...prev, [id]: false }));
         }
@@ -356,28 +359,35 @@ export default function History() {
                                                 </p>
                                             </div>
                                         ) : (
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleGetFeedback(workout.id);
-                                                }}
-                                                disabled={loadingFeedback[workout.id]}
-                                                className="w-full h-[48px] bg-[#6B7AFF]/10 border border-[#6B7AFF]/30 rounded-xl text-[#6B7AFF] font-bold text-[13px] uppercase tracking-widest hover:bg-[#6B7AFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                                            >
-                                                {loadingFeedback[workout.id] ? (
-                                                    <>
-                                                        <div className="w-4 h-4 border-2 border-[#6B7AFF] border-t-transparent rounded-full animate-spin"></div>
-                                                        Analizando...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                                        </svg>
-                                                        Pedir análisis IA
-                                                    </>
+                                            <>
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleGetFeedback(workout.id);
+                                                    }}
+                                                    disabled={loadingFeedback[workout.id]}
+                                                    className="w-full h-[48px] bg-[#6B7AFF]/10 border border-[#6B7AFF]/30 rounded-xl text-[#6B7AFF] font-bold text-[13px] uppercase tracking-widest hover:bg-[#6B7AFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                                >
+                                                    {loadingFeedback[workout.id] ? (
+                                                        <>
+                                                            <div className="w-4 h-4 border-2 border-[#6B7AFF] border-t-transparent rounded-full animate-spin"></div>
+                                                            Analizando...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                            </svg>
+                                                            Pedir análisis IA
+                                                        </>
+                                                    )}
+                                                </button>
+                                                {feedbackErrors[workout.id] && (
+                                                    <p className="mt-2 text-[#E84C6A] text-[11px] font-bold text-center uppercase tracking-wider">
+                                                        {feedbackErrors[workout.id]}
+                                                    </p>
                                                 )}
-                                            </button>
+                                            </>
                                         )}
                                     </div>
                                 </div>
