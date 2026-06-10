@@ -2,17 +2,17 @@ const prisma = require('../prisma');
 
 const getWeeklyVolume = async (req, res) => {
     const userId = req.user.userId;
-    const offset = parseInt(req.query.offset) || 0; // 0 = actual, -1 = semana pasada, etc.
+    const offset = parseInt(req.query.offset) || 0; 
 
-    // Calcular el rango de la semana basada en el offset
-    // Una semana siempre son 7 días. El offset se multiplica por 7.
-    const startOfRange = new Date();
-    startOfRange.setHours(0, 0, 0, 0);
-    startOfRange.setDate(startOfRange.getDate() - (7 * Math.abs(offset)) - 7);
-    
+    // Calculamos el fin de rango (hoy + offset de semanas)
     const endOfRange = new Date();
+    endOfRange.setDate(endOfRange.getDate() + (offset * 7));
     endOfRange.setHours(23, 59, 59, 999);
-    endOfRange.setDate(endOfRange.getDate() - (7 * Math.abs(offset)));
+
+    // El inicio es 6 días antes del fin (para completar 7 días)
+    const startOfRange = new Date(endOfRange);
+    startOfRange.setDate(startOfRange.getDate() - 6);
+    startOfRange.setHours(0, 0, 0, 0);
 
     try {
         const workouts = await prisma.workout.findMany({
@@ -28,11 +28,10 @@ const getWeeklyVolume = async (req, res) => {
             }
         });
 
-        // Preparar array de 7 días basado en el rango calculado
         const dailyVolume = [];
         for (let i = 0; i < 7; i++) {
             const date = new Date(startOfRange);
-            date.setDate(date.getDate() + i + 1);
+            date.setDate(date.getDate() + i);
             dailyVolume.push({ 
                 day: date.getDay(), 
                 date: date.toISOString().split('T')[0],
