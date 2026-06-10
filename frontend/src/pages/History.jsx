@@ -25,8 +25,18 @@ export default function History() {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedExerciseForDetail, setSelectedExerciseForDetail] = useState(null);
     const [dateFilter, setDateFilter] = useState('Todos'); // Todos, Hoy, Semana, Mes
+    const [weekOffset, setWeekOffset] = useState(0); // 0 = actual, -1 = semana anterior
 
     const token = localStorage.getItem('token');
+
+    const fetchWeeklyVolume = async (offset) => {
+        try {
+            const res = await api.get(`stats/weekly-volume?offset=${offset}`);
+            setWeeklyVolume(res.data);
+        } catch (err) {
+            console.error("Error al cargar volumen semanal:", err);
+        }
+    };
 
     const filterWorkoutsByDate = (workoutsList) => {
         const today = new Date();
@@ -66,13 +76,12 @@ export default function History() {
                 if (exercisesList.length > 0) setSelectedExerciseId(exercisesList[0].id);
 
                 // 2. Cargar datos dinámicos (que cambian siempre)
-                const [volRes, workoutRes, prRes] = await Promise.all([
-                    api.get('stats/weekly-volume'),
+                const [workoutRes, prRes] = await Promise.all([
                     api.get('workouts'),
                     api.get('stats/personal-records')
                 ]);
                 
-                setWeeklyVolume(volRes.data);
+                fetchWeeklyVolume(weekOffset);
                 setWorkouts(workoutRes.data);
                 setPersonalRecords(prRes.data);
 
@@ -92,6 +101,12 @@ export default function History() {
 
         if (token) fetchInitialData();
     }, [token]);
+
+    useEffect(() => {
+        if (token && weekOffset !== 0) {
+            fetchWeeklyVolume(weekOffset);
+        }
+    }, [weekOffset, token]);
 
     const handleGetFeedback = async (id) => {
         if (feedbacks[id]) return;
@@ -244,7 +259,34 @@ export default function History() {
 
                         {/* Weekly Volume Chart */}
                         <div className="bg-[#14141e]/50 p-6 rounded-[24px] border border-white/5 shadow-xl">
-                            <h2 className="text-center font-bold text-[20px] mb-8 text-white/80 uppercase tracking-widest">Volumen semanal</h2>
+                            <div className="flex items-center justify-between mb-8 px-2">
+                                <button 
+                                    onClick={() => setWeekOffset(prev => prev - 1)}
+                                    className="p-2 hover:bg-white/5 rounded-full transition-colors text-[#e05c2a]"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                                        <path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"></path>
+                                    </svg>
+                                </button>
+                                
+                                <div className="text-center">
+                                    <h2 className="font-bold text-[18px] text-white/80 uppercase tracking-widest leading-tight">Volumen semanal</h2>
+                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-tighter mt-1">
+                                        {weekOffset === 0 ? 'Semana Actual' : `Hace ${Math.abs(weekOffset)} ${Math.abs(weekOffset) === 1 ? 'semana' : 'semanas'}`}
+                                    </p>
+                                </div>
+
+                                <button 
+                                    onClick={() => setWeekOffset(prev => Math.min(0, prev + 1))}
+                                    disabled={weekOffset === 0}
+                                    className={`p-2 hover:bg-white/5 rounded-full transition-colors ${weekOffset === 0 ? 'text-white/10' : 'text-[#e05c2a]'}`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                                        <path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            
                             <div className="h-[220px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={weeklyVolume.map(v => ({ name: ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'][v.day], volume: v.volume }))}>

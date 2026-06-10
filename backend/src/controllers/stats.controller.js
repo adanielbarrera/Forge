@@ -2,31 +2,53 @@ const prisma = require('../prisma');
 
 const getWeeklyVolume = async (req, res) => {
     const userId = req.user.userId;
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const offset = parseInt(req.query.offset) || 0; // 0 = actual, -1 = semana pasada, etc.
+
+    // Calcular el rango de la semana basada en el offset
+    // Una semana siempre son 7 días. El offset se multiplica por 7.
+    const startOfRange = new Date();
+    startOfRange.setHours(0, 0, 0, 0);
+    startOfRange.setDate(startOfRange.getDate() - (7 * Math.abs(offset)) - 7);
+    
+    const endOfRange = new Date();
+    endOfRange.setHours(23, 59, 59, 999);
+    endOfRange.setDate(endOfRange.getDate() - (7 * Math.abs(offset)));
 
     try {
         const workouts = await prisma.workout.findMany({
             where: {
                 userId,
-                fecha: { gte: sevenDaysAgo }
+                fecha: { 
+                    gte: startOfRange,
+                    lte: endOfRange
+                }
             },
             include: {
                 exercises: true
             }
         });
 
-        // Group by day of week (0-6)
-        const dailyVolume = Array(7).fill(0).map((_, i) => ({ day: i, volume: 0 }));
+        // Preparar array de 7 días basado en el rango calculado
+        const dailyVolume = [];
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(startOfRange);
+            date.setDate(date.getDate() + i + 1);
+            dailyVolume.push({ 
+                day: date.getDay(), 
+                date: date.toISOString().split('T')[0],
+                volume: 0 
+            });
+        }
 
         workouts.forEach(workout => {
-            const day = workout.fecha.getDay(); // 0 (Sun) - 6 (Sat)
-            const volume = workout.exercises.reduce((sum, set) => sum + (set.series * set.reps * set.peso), 0);
-            dailyVolume[day].volume += volume;
+            const dateStr = workout.fecha.toISOString().split('T')[0];
+            const dayData = dailyVolume.find(d => d.date === dateStr);
+            if (dayData) {
+                const volume = workout.exercises.reduce((sum, set) => sum + (set.series * set.reps * set.peso), 0);
+                dayData.volume += volume;
+            }
         });
 
-        // Reorder to start from 7 days ago until today if needed, or keep it sorted by day of week.
-        // Figma seems to show a sequence (0-6 or 0-9).
         res.json(dailyVolume);
     } catch (err) {
         console.error(err);
